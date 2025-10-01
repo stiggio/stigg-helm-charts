@@ -1,0 +1,16 @@
+# This are the default values for the Stigg Helm chart.
+# You can provide your own values when installing the chart.
+# You can override these values in your own Helm chart's values.yaml file. For example:
+#
+# stiggchart:
+#   serverApiKey: "your-server-api-key"
+#   clientApiKey: "your-client-api-key"
+serverApiKey: ""
+clientApiKey: ""
+sidecarImageTag: "latest"
+persistentCacheImageTag: "latest"
+persistentCaching: false
+redisEnvironmentPrefix: ""
+redisHost: ""
+awsRegion: ""
+queueUrl: ""
