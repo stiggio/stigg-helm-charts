@@ -18,8 +18,8 @@ spec:
         - name: persistent-cache-service
           image: public.ecr.aws/stigg/persistent-cache-service:{{ .Values.persistentCacheImageTag }}
           env:
-{{- include "stigg.redisEnv" . | indent 12 }}
 {{- include "stigg.apikeys" . | indent 12 }}
+{{- include "stigg.redisEnv" . | indent 12 }}
 {{- include "stigg.sqsEnv" . | indent 12 }}
           ports:
             - containerPort: 8080

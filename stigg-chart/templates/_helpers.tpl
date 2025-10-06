@@ -2,27 +2,30 @@
 {{- /* */ -}}
 {{- /* */ -}}
 
-{{- /* APP context redis env - sidecar */ -}}
-{{- define "stigg.sidecarRedisEnv" }}
-- name: REDIS_ENVIRONMENT_PREFIX
-  value: {{ .Values.stiggchart.redisEnvironmentPrefix | quote }}
-- name: REDIS_HOST 
-  value: {{ .Values.stiggchart.redisHost | quote }}
-{{- end }}
-
-{{- /* Stigg context redis env - persistent caching deployment */ -}}
 {{- define "stigg.redisEnv" }}
 - name: REDIS_ENVIRONMENT_PREFIX
-  value: {{ .Values.redisEnvironmentPrefix | quote }}
-- name: REDIS_HOST 
-  value: {{ .Values.redisHost | quote }}
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: REDIS_ENVIRONMENT_PREFIX
+- name: REDIS_HOST
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: REDIS_HOST
 {{- end }}
 
 {{- define "stigg.sqsEnv" }}
 - name: AWS_REGION
-  value: {{ .Values.awsRegion | quote }}
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: AWS_REGION
 - name: QUEUE_URL
-  value: {{ .Values.queueUrl | quote }}
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: QUEUE_URL
 {{- end }}
 
 {{- /* utilities */ -}}
@@ -53,9 +56,8 @@
   {{- fail "serverApiKey must be set to run the sidecar!" }}
 {{ end }}
 {{- if eq .Values.stiggchart.persistentCaching true }}
-{{- include "stigg.sidecarRedisEnv" . | indent 4 }}
+{{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}
   ports:
   - containerPort: 80
 {{- end }}
-

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stigg-conf
+  labels:
+    app: stigg
+    chart: {{ .Chart.Name }}
+data:
+  REDIS_ENVIRONMENT_PREFIX: {{ .Values.redisEnvironmentPrefix | quote }}
+  REDIS_HOST: {{ .Values.redisHost | quote }}
+  AWS_REGION: {{ .Values.awsRegion | quote }}
+  QUEUE_URL: {{ .Values.queueUrl | quote }}

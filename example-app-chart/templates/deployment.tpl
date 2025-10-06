@@ -13,18 +13,18 @@ kind: Deployment
 metadata:
   name: {{ .Chart.Name }}
   labels:
-    app: {{ .Chart.Name }}
+    app: app
   annotations:
     revision: {{ .Release.Revision | quote }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: app
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: app
     spec:
       containers:
         - name: python-app
