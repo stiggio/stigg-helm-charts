@@ -43,8 +43,8 @@ spec:
               mountPath: /app/app.py
               subPath: app.py
           env:
-{{ include "stigg.apikeys" . | indent 12 }}
-{{ include "stigg.sidecar" . | indent 8 }}
+{{- include "stigg.apikeys" . | indent 12 }}
+{{- include "stigg.sidecar" . | indent 8 }}
       volumes:
         - name: app-code
           configMap:
