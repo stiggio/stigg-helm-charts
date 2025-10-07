@@ -1,4 +1,5 @@
 # ignore sub charts
 example-app-chart/charts/*
 !example-app-chart/charts/.gitkeep
-kustomization/stigg-manifests.yaml
+kustomize/generated/*
+!kustomize/generated/.gitkeep

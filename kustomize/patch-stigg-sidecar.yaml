@@ -1,0 +1,26 @@
+- op: add
+  path: /spec/template/spec/containers/-
+  value:
+    name: stigg-sidecar
+    image: public.ecr.aws/stigg/sidecar:latest
+    env:
+      - name: SERVER_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: stigg-api-keys
+            key: SERVER_API_KEY
+      - name: CLIENT_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: stigg-api-keys
+            key: CLIENT_API_KEY
+      - name: REDIS_ENVIRONMENT_PREFIX
+        valueFrom:
+          configMapKeyRef:
+            name: stigg-conf
+            key: REDIS_ENVIRONMENT_PREFIX
+      - name: REDIS_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: stigg-conf
+            key: REDIS_HOST
