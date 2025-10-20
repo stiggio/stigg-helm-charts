@@ -175,7 +175,7 @@ If you do not want to use Helm directly, you can render the Kubernetes manifests
     kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
     
     # provision the app
-    kubectl apply -n ${NAMESPACE} -f kustomize/app-manifests.yaml    
+    kubectl apply -n ${NAMESPACE} -f kustomize/generated/app-manifests.yaml    
     ```
 5. Port-forward to the created pod and send a request:
     ```sh
