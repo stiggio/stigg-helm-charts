@@ -40,9 +40,20 @@ jobs:
           APP_POD=$(kubectl get pods -n helm -l app=app -o jsonpath='{.items[0].metadata.name}')
           kubectl port-forward -n helm $APP_POD 9090:9090 &
           sleep 5
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
           if [ "$STATUS" -eq 500 ]; then
             echo "Received HTTP 500 from app pod in helm namespace"
+            exit 1
+          fi
+
+      - name: Check Redis keys in helm namespace
+        run: |
+          COUNT=$(kubectl run -i redis-client -n helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE)
+          echo "Redis key count in helm namespace: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No keys found in Redis in helm namespace"
             exit 1
           fi
 
@@ -64,13 +75,19 @@ jobs:
           APP_POD=$(kubectl get pods -n no-helm -l app=app -o jsonpath='{.items[0].metadata.name}')
           kubectl port-forward -n no-helm $APP_POD 9090:9090 &
           sleep 5
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
           if [ "$STATUS" -eq 500 ]; then
-            echo "Received HTTP 500 from app pod in helm namespace"
+            echo "Received HTTP 500 from app pod in no-helm namespace"
             exit 1
           fi
 
-      - name: Print pod status for both namespaces
+      - name: Check Redis keys in no-helm namespace
         run: |
-          kubectl get pods -n helm
-          kubectl get pods -n no-helm
+          COUNT=$(kubectl run -i redis-client -n no-helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE)
+          echo "Redis key count in no-helm namespace: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No keys found in Redis in no-helm namespace"
+            exit 1
+          fi
