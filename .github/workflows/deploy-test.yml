@@ -35,6 +35,17 @@ jobs:
           kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
+      - name: Port-forward app pod in helm namespace and test
+        run: |
+          APP_POD=$(kubectl get pods -n helm -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n helm $APP_POD 9090:9090 &
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          if [ "$STATUS" -eq 500 ]; then
+            echo "Received HTTP 500 from app pod in helm namespace"
+            exit 1
+          fi
+
       - name: Deploy with Kubectl/Kustomize
         run: |
           export NAMESPACE="no-helm"
@@ -47,6 +58,17 @@ jobs:
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
           kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
+
+      - name: Port-forward app pod in no-helm namespace and test
+        run: |
+          APP_POD=$(kubectl get pods -n no-helm -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n no-helm $APP_POD 9090:9090 &
+          sleep 5
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          if [ "$STATUS" -eq 500 ]; then
+            echo "Received HTTP 500 from app pod in helm namespace"
+            exit 1
+          fi
 
       - name: Print pod status for both namespaces
         run: |
