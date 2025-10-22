@@ -91,3 +91,25 @@ jobs:
             echo "No keys found in Redis in no-helm namespace"
             exit 1
           fi
+
+      - name: Dump pod logs and describe (helm namespace)
+        if: failure()
+        run: |
+          echo "=== Pod describe (helm) ==="
+          kubectl describe pods -n helm || true
+          echo "=== Pod logs (helm) ==="
+          for pod in $(kubectl get pods -n helm -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Logs for $pod ---"
+            kubectl logs -n helm $pod || true
+          done
+
+      - name: Dump pod logs and describe (no-helm namespace)
+        if: failure()
+        run: |
+          echo "=== Pod describe (no-helm) ==="
+          kubectl describe pods -n no-helm || true
+          echo "=== Pod logs (no-helm) ==="
+          for pod in $(kubectl get pods -n no-helm -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Logs for $pod ---"
+            kubectl logs -n no-helm $pod || true
+          done
