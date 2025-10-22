@@ -53,11 +53,11 @@ jobs:
           APP_POD=$(kubectl get pods -n helm -l app=app -o jsonpath='{.items[0].metadata.name}')
           kubectl port-forward -n helm $APP_POD 9090:9090 &
           sleep 5
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=helm-ci&feature_id=feature-join-community")
           echo "$RESPONSE"
           STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
-          if [ "$STATUS" -eq 500 ]; then
-            echo "Received HTTP 500 from app pod in helm namespace"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Received HTTP $STATUS from app pod in helm namespace"
             exit 1
           fi
 
@@ -88,11 +88,11 @@ jobs:
           APP_POD=$(kubectl get pods -n no-helm -l app=app -o jsonpath='{.items[0].metadata.name}')
           kubectl port-forward -n no-helm $APP_POD 9090:9090 &
           sleep 5
-          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=customer-demo-01&feature_id=feature-01-templates")
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=helm-ci&feature_id=feature-join-community")
           echo "$RESPONSE"
           STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
-          if [ "$STATUS" -eq 500 ]; then
-            echo "Received HTTP 500 from app pod in no-helm namespace"
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Received HTTP $STATUS from app pod in no-helm namespace"
             exit 1
           fi
 
