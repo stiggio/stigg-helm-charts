@@ -32,7 +32,7 @@ jobs:
           cp -r stigg-chart example-app-chart/charts
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod -n ${NAMESPACE} --timeout=180s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Deploy with Kubectl/Kustomize
@@ -45,7 +45,7 @@ jobs:
           kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/app-manifests.yaml
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod -n ${NAMESPACE} --timeout=180s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Print pod status for both namespaces
