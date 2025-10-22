@@ -1,0 +1,52 @@
+name: Deploy and Test Stigg Helm Charts on Minikube
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  minikube-deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@v0.0.20
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Deploy with Helm
+        run: |
+          export NAMESPACE=helm
+          kubectl create ns ${NAMESPACE}
+          cp -r stigg-chart example-app-chart/charts
+          helm install -n ${NAMESPACE} example-app ./example-app-chart
+          kubectl wait --for=condition=Ready pod -l app=app -n ${NAMESPACE} --timeout=180s
+          kubectl get pods -n ${NAMESPACE}
+
+      - name: Deploy with Kubectl/Kustomize
+        run: |
+          export NAMESPACE="no-helm"
+          kubectl create ns ${NAMESPACE}
+          helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
+          kubectl kustomize kustomize > kustomize/generated/app-manifests.yaml
+          kubectl apply -n ${NAMESPACE} -f kustomize/generated/stigg-manifests.yaml
+          kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
+          kubectl apply -n ${NAMESPACE} -f kustomize/generated/app-manifests.yaml
+          kubectl wait --for=condition=Ready pod -l app=app -n ${NAMESPACE} --timeout=180s
+          kubectl get pods -n ${NAMESPACE}
+
+      - name: Print pod status for both namespaces
+        run: |
+          kubectl get pods -n helm
+          kubectl get pods -n no-helm
