@@ -50,7 +50,7 @@ jobs:
 
       - name: Check Redis keys in helm namespace
         run: |
-          COUNT=$(kubectl run -i redis-client -n helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE)
+          COUNT=$(kubectl run -i redis-client -n helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
           echo "Redis key count in helm namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in helm namespace"
@@ -85,7 +85,7 @@ jobs:
 
       - name: Check Redis keys in no-helm namespace
         run: |
-          COUNT=$(kubectl run -i redis-client -n no-helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE)
+          COUNT=$(kubectl run -i redis-client -n no-helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
           echo "Redis key count in no-helm namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in no-helm namespace"
