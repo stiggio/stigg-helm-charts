@@ -25,6 +25,16 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Patch values.yaml files with secrets
+        env:
+          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
+          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+        run: |
+          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
+          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
+
       - name: Deploy with Helm
         run: |
           export NAMESPACE=helm
