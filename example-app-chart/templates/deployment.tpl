@@ -38,6 +38,9 @@ spec:
               python -u /app/app.py
           ports:
             - containerPort: 9090
+          readinessProbe:
+            tcpSocket:
+              port: 9090            
           volumeMounts:
             - name: app-code
               mountPath: /app/app.py
