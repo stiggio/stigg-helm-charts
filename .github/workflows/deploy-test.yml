@@ -37,6 +37,9 @@ jobs:
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
           sed -i "s|^\( *persistentCaching: *\).*|\1true|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisEnvironmentPrefix: *\).*|\1production|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisHost: *\).*|\1redis|" stigg-chart/values.yaml
+          sed -i "s|^\( *awsRegion: *\).*|\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
