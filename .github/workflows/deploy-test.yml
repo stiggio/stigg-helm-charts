@@ -1,4 +1,4 @@
-name: Deploy and Test Stigg Helm Charts on Minikube
+name: Test Deployment on Minikube
 
 on:
   pull_request:
@@ -31,7 +31,8 @@ jobs:
           kubectl create ns ${NAMESPACE}
           cp -r stigg-chart example-app-chart/charts
           helm install -n ${NAMESPACE} example-app ./example-app-chart
-          kubectl wait --for=condition=Ready pod -l app=app -n ${NAMESPACE} --timeout=180s
+          echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
+          kubectl wait --for=condition=Ready pod -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Deploy with Kubectl/Kustomize
@@ -43,7 +44,8 @@ jobs:
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/stigg-manifests.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/app-manifests.yaml
-          kubectl wait --for=condition=Ready pod -l app=app -n ${NAMESPACE} --timeout=180s
+          echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
+          kubectl wait --for=condition=Ready pod -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Print pod status for both namespaces
