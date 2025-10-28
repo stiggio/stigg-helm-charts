@@ -67,6 +67,16 @@ jobs:
             exit 1
           fi
 
+      - name: Check extra ConfigMap deployment
+        run: |
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE}
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o yaml
+          VALUE=$(kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o jsonpath='{.data.test-key}')
+          if [ "$VALUE" != "test-value" ]; then
+            echo "ConfigMap test-key value is not correct: $VALUE"
+            exit 1
+          fi
+
       - name: Dump pod logs and describe (helm namespace)
         if: failure()
         run: |
@@ -155,4 +165,4 @@ jobs:
           for pod in $(kubectl get pods -n no-helm -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
             kubectl logs -n no-helm $pod || true
-          done          
+          done
