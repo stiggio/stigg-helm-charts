@@ -1,16 +1,28 @@
-# This are the default values for the Stigg Helm chart.
+## @section Common parameters
 # You can provide your own values when installing the chart.
 # You can override these values in your own Helm chart's values.yaml file. For example:
 #
 # stiggchart:
 #   serverApiKey: "your-server-api-key"
 #   clientApiKey: "your-client-api-key"
+
+## @param serverApiKey Stigg server API key
 serverApiKey: ""
+## @param clientApiKey Stigg client API key
 clientApiKey: ""
+## @param sidecarImageTag Docker image tag for the Stigg Sidecar
 sidecarImageTag: "latest"
+## @param persistentCacheImageTag Docker image tag for the Stigg Persistent Cache
 persistentCacheImageTag: "2.39.0"
+## @param persistentCaching Enable persistent caching (true/false)
 persistentCaching: false
+## @param redisEnvironmentPrefix Prefix for Redis environment keys
 redisEnvironmentPrefix: ""
+## @param redisHost Hostname for Redis instance
 redisHost: ""
+## @param awsRegion AWS region for SQS queue, provisioned by Stigg
 awsRegion: ""
+## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
 queueUrl: ""
+## @param extraDeploy Array of extra objects to deploy with the release
+extraDeploy: []

@@ -1,0 +1,5 @@
+{{- $root := . -}}
+{{- range $obj := .Values.extraDeploy }}
+---
+{{- toYaml $obj | nindent 0 }}
+{{- end }}
