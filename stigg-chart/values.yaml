@@ -8,7 +8,7 @@
 serverApiKey: ""
 clientApiKey: ""
 sidecarImageTag: "latest"
-persistentCacheImageTag: "latest"
+persistentCacheImageTag: "2.39.0"
 persistentCaching: false
 redisEnvironmentPrefix: ""
 redisHost: ""
