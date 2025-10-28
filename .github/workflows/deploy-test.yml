@@ -88,6 +88,8 @@ jobs:
             echo "--- Logs for $pod ---"
             kubectl logs -n helm $pod || true
           done
+          echo "=== ConfigMaps (helm) ==="
+          kubectl get configmap -n helm
 
   kustomize-deploy-test:
     runs-on: ubuntu-latest
@@ -167,3 +169,4 @@ jobs:
             echo "--- Logs for $pod ---"
             kubectl logs -n no-helm $pod || true
           done
+          kubectl get configmap -n no-helm
