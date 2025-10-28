@@ -10,8 +10,7 @@ def setup_stigg():
     global stigg
     api_key = os.environ.get("SERVER_API_KEY")
     if not api_key:
-        print("SERVER_API_KEY environment variable is not set")
-        return
+        raise ValueError("SERVER_API_KEY environment variable is not set")
     
     print("Initializing Stigg Sidecar SDK")
     stigg = Stigg(

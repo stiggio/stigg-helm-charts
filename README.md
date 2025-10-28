@@ -25,6 +25,8 @@ The Persistent Cache is an optional component that stores entitlement and featur
 
 The sidecar will first check the persistent cache for entitlement data before reaching out to the Stigg backend, ensuring high availability and performance.
 
+> **⚠️ Important:** Enabling a Persistent Cache requires additional setup from Stigg.
+
 ### Example: Entitlement Check Flow
 Suppose your app needs to check if a customer can access a premium feature:
 
@@ -66,15 +68,19 @@ The setup will look like this:
 |   Your App Pod    +-------->+   Stigg Sidecar   |
 |                   |         |                   |
 +-------------------+         +-------------------+
-         |                             |
-         | Redis (local cache)         |  API
-         v                             v
-+-------------------+         +-------------------+
-|   Redis Pod       |<------->| Stigg Persistent  |
-+-------------------+         | Cache Deployment  |
+                                       |
+                                       v
                               +-------------------+
-                                      |
-                                      v
+                              |   Redis Pod       |
+                              +-------------------+
+                                       ∧
+                                       |
+                              +-------------------+
+                              | Stigg Persistent  |
+                              | Cache Deployment  |
+                              +-------------------+
+                                       ∧
+                                       |
                               +-------------------+
                               |  Stigg Cloud API  |
                               +-------------------+
@@ -123,7 +129,7 @@ This section provides a step-by-step tutorial for deploying the example app with
 
 6. **Send a request:**
    ```sh
-   curl "localhost:9090?customer_id=my-customer&feature_id=cool-feature"
+   curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
    ```
 
 7. **Inspect the redis content:**
@@ -181,7 +187,7 @@ If you do not want to use Helm directly, you can render the Kubernetes manifests
     ```sh
     kubectl port-forward -n ${NAMESPACE} $(kubectl get pods -l app=app -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}') 9090
 
-    curl "localhost:9090?customer_id=my-customer&feature_id=cool-feature"
+    curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
     ```
 6. Clean resources (after closing all connections to pods):
     ```sh

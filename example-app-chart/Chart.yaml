@@ -1,6 +1,6 @@
 apiVersion: v2
 name: example-app-chart
-description: An example app that uses Stigg for feature flagging
+description: An example app that uses Stigg for entitlements checks
 type: application
 version: 0.1.2
 appVersion: "1.16.2"

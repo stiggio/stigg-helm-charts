@@ -5,6 +5,7 @@ metadata:
   labels:
     app: app-code
 data:
+  # this is for test purposes and for real world application a docker image will be used
   app.py: |-
     import asyncio
     import io
@@ -18,8 +19,7 @@ data:
         global stigg
         api_key = os.environ.get("SERVER_API_KEY")
         if not api_key:
-            print("SERVER_API_KEY environment variable is not set")
-            return
+            raise ValueError("SERVER_API_KEY environment variable is not set")
         
         print("Initializing Stigg Sidecar SDK")
         stigg = Stigg(

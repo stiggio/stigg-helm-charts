@@ -1,8 +1,8 @@
 stiggchart:
-  serverApiKey: "<SERVER_API_KEY>"
+  serverApiKey: "server-bb09dfa3-a947-4128-bd8b-e88887d5dbb4:df78f0c6-163f-401e-86d4-8387c0fb3b6a"
   sidecarImageTag: "latest"
   persistentCaching: true
   redisEnvironmentPrefix: "production"
   redisHost: "redis"
   awsRegion: "us-east-2"
-  queueUrl: "<SQS_QUEUE_URL>"
+  queueUrl: "https://sqs.us-east-2.amazonaws.com/502947190190/production-sqs-event-queue-qa-account-persistent-caching-test"

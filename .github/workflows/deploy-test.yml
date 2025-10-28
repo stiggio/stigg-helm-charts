@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  minikube-deploy-test:
+  helm-deploy-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -34,12 +34,6 @@ jobs:
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
-          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
-          sed -i "s|^\( *persistentCaching: *\).*|\1true|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisEnvironmentPrefix: *\).*|\1production|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisHost: *\).*|\1redis|" stigg-chart/values.yaml
-          sed -i "s|^\( *awsRegion: *\).*|\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
@@ -72,6 +66,50 @@ jobs:
             echo "No keys found in Redis in helm namespace"
             exit 1
           fi
+
+      - name: Dump pod logs and describe (helm namespace)
+        if: failure()
+        run: |
+          echo "=== Pod describe (helm) ==="
+          kubectl describe pods -n helm || true
+          echo "=== Pod logs (helm) ==="
+          for pod in $(kubectl get pods -n helm -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Logs for $pod ---"
+            kubectl logs -n helm $pod || true
+          done
+
+  kustomize-deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@v0.0.20
+        with:
+          cache: true
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Patch values.yaml files with secrets
+        env:
+          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
+          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+        run: |
+          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
+          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
+          sed -i "s|^\( *persistentCaching: *\).*|\1true|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisEnvironmentPrefix: *\).*|\1production|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisHost: *\).*|\1redis|" stigg-chart/values.yaml
+          sed -i "s|^\( *awsRegion: *\).*|\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
         run: |
@@ -108,17 +146,6 @@ jobs:
             exit 1
           fi
 
-      - name: Dump pod logs and describe (helm namespace)
-        if: failure()
-        run: |
-          echo "=== Pod describe (helm) ==="
-          kubectl describe pods -n helm || true
-          echo "=== Pod logs (helm) ==="
-          for pod in $(kubectl get pods -n helm -o jsonpath='{.items[*].metadata.name}'); do
-            echo "--- Logs for $pod ---"
-            kubectl logs -n helm $pod || true
-          done
-
       - name: Dump pod logs and describe (no-helm namespace)
         if: failure()
         run: |
@@ -128,4 +155,4 @@ jobs:
           for pod in $(kubectl get pods -n no-helm -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
             kubectl logs -n no-helm $pod || true
-          done
+          done          
