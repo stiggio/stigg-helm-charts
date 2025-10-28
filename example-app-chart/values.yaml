@@ -6,12 +6,12 @@ stiggchart:
   redisHost: "redis"
   awsRegion: "us-east-2"
   queueUrl: "<SQS_QUEUE_URL>"
-extraDeploy:
-  - apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: example-extra-configmap
-      labels:
-        app: example-app
-    data:
-      test-key: "test-value"
+  extraDeploy:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: example-extra-configmap
+        labels:
+          app: example-app
+      data:
+        test-key: "test-value"
