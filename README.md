@@ -53,12 +53,14 @@ Use `kubectl` to interact with your cluster, `minikube` for local clusters, and 
 This example assumes you are running a local Kubernetes cluster using [minikube](https://minikube.sigs.k8s.io/docs/) or [kind](https://kind.sigs.k8s.io/), but you can also use any managed Kubernetes service (e.g., GKE, EKS, AKS) if you prefer.
 
 When you deploy the example app with the Stigg charts, the following resources will be created in your cluster:
-- **example-app**: A pod running your sample application (e.g., Python HTTP server)
+- **example-app**: A pod running your sample application (e.g., Python HTTP server).
 - **stigg-sidecar**: A sidecar container running alongside the app, handling entitlement checks and feature flags
 - **stigg-persistent-cache**: A deployment running the persistent cache service
 - **Redis**: A pod running Redis, used by the persistent cache for fast local storage
 - **Kubernetes Services**: For exposing the app and Redis within the cluster
 - **Secrets and ConfigMaps**: For securely passing API keys and configuration to the app and sidecar
+
+> **⚠️ Note:** to simplify this repo, the app code is injected dynamically using a configmap. The best practice is to build and deploy apps with container images.
 
 The setup will look like this:
 

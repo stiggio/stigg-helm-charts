@@ -34,6 +34,22 @@
 
 {{- /* A utility to bind api keys to env variables from a secret */ -}}
 {{- define "stigg.apikeys" }}
+{{- /* Fetch the right context to evaluate the values */ -}}
+{{- $vals := .Values.stiggchart | default .Values }}
+{{- if $vals.apiKeysSecretName }}
+# using existing secret
+- name: SERVER_API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ $vals.apiKeysSecretName }}
+      key: stigg_server_api_key
+- name: CLIENT_API_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ $vals.apiKeysSecretName }}
+      key: stigg_client_api_key
+{{- else }}
+# using stigg secret
 - name: SERVER_API_KEY
   valueFrom:
     secretKeyRef:
@@ -45,6 +61,7 @@
       name: stigg-api-keys
       key: CLIENT_API_KEY
 {{- end }}
+{{- end }}
 
 {{- /* A utility to add a stigg sidecar to a given deployment/pod */ -}}
 {{- define "stigg.sidecar" }}
@@ -52,9 +69,9 @@
   image: public.ecr.aws/stigg/sidecar:{{ .Values.stiggchart.sidecarImageTag }}
   env:
 {{- include "stigg.apikeys" . | indent 4 }}
-{{- if eq .Values.stiggchart.serverApiKey "" }}
-  {{- fail "serverApiKey must be set to run the sidecar!" }}
-{{ end }}
+{{- if and (eq .Values.stiggchart.serverApiKey "") (eq .Values.stiggchart.apiKeysSecretName "") }}
+  {{- fail "Either serverApiKey or apiKeysSecretName must be set to run the sidecar!" }}
+{{- end }}
 {{- if eq .Values.stiggchart.persistentCaching true }}
 {{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}

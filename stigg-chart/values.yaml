@@ -6,10 +6,13 @@
 #   serverApiKey: "your-server-api-key"
 #   clientApiKey: "your-client-api-key"
 
-## @param serverApiKey Stigg server API key
+## @param serverApiKey Stigg server API key to store in a new created secret
 serverApiKey: ""
-## @param clientApiKey Stigg client API key
+## @param clientApiKey Stigg client API key to store in a new created secret
 clientApiKey: ""
+## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" and "stigg_client_api_key" defined.
+## This ignores serverApiKey and clientApiKey
+apiKeysSecretName: ""
 ## @param sidecarImageTag Docker image tag for the Stigg Sidecar
 sidecarImageTag: "latest"
 ## @param persistentCacheImageTag Docker image tag for the Stigg Persistent Cache

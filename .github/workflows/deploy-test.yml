@@ -47,23 +47,25 @@ jobs:
 
       - name: Port-forward app pod in helm namespace and test
         run: |
-          APP_POD=$(kubectl get pods -n helm -l app=app -o jsonpath='{.items[0].metadata.name}')
-          kubectl port-forward -n helm $APP_POD 9090:9090 &
+          export NAMESPACE=helm
+          APP_POD=$(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n ${NAMESPACE} $APP_POD 9090:9090 &
           sleep 5
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=helm-ci&feature_id=feature-join-community")
           echo "$RESPONSE"
           STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
           if [ "$STATUS" -ne 200 ]; then
-            echo "Received HTTP $STATUS from app pod in helm namespace"
+            echo "Received HTTP $STATUS from app pod in ${NAMESPACE} namespace"
             exit 1
           fi
 
       - name: Check Redis keys in helm namespace
         run: |
-          COUNT=$(kubectl run -i redis-client -n helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
-          echo "Redis key count in helm namespace: $COUNT"
+          export NAMESPACE=helm
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
-            echo "No keys found in Redis in helm namespace"
+            echo "No keys found in Redis in ${NAMESPACE} namespace"
             exit 1
           fi
 
@@ -81,15 +83,16 @@ jobs:
       - name: Dump pod logs and describe (helm namespace)
         if: failure()
         run: |
-          echo "=== Pod describe (helm) ==="
-          kubectl describe pods -n helm || true
-          echo "=== Pod logs (helm) ==="
-          for pod in $(kubectl get pods -n helm -o jsonpath='{.items[*].metadata.name}'); do
+          export NAMESPACE=helm
+          echo "=== Pod describe (${NAMESPACE}) ==="
+          kubectl describe pods -n ${NAMESPACE} || true
+          echo "=== Pod logs (${NAMESPACE}) ==="
+          for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n helm $pod || true
+            kubectl logs -n ${NAMESPACE} $pod || true
           done
-          echo "=== ConfigMaps (helm) ==="
-          kubectl get configmap -n helm
+          echo "=== ConfigMaps (${NAMESPACE}) ==="
+          kubectl get configmap -n ${NAMESPACE}
 
   kustomize-deploy-test:
     runs-on: ubuntu-latest
@@ -126,7 +129,7 @@ jobs:
 
       - name: Deploy with Kubectl/Kustomize
         run: |
-          export NAMESPACE="no-helm"
+          export NAMESPACE=no-helm
           kubectl create ns ${NAMESPACE}
           helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
           kubectl kustomize kustomize > kustomize/generated/app-manifests.yaml
@@ -139,34 +142,132 @@ jobs:
 
       - name: Port-forward app pod in no-helm namespace and test
         run: |
-          APP_POD=$(kubectl get pods -n no-helm -l app=app -o jsonpath='{.items[0].metadata.name}')
-          kubectl port-forward -n no-helm $APP_POD 9091:9090 &
+          export NAMESPACE=no-helm
+          APP_POD=$(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n ${NAMESPACE} $APP_POD 9091:9090 &
           sleep 5
           RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9091?customer_id=helm-ci&feature_id=feature-join-community")
           echo "$RESPONSE"
           STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
           if [ "$STATUS" -ne 200 ]; then
-            echo "Received HTTP $STATUS from app pod in no-helm namespace"
+            echo "Received HTTP $STATUS from app pod in ${NAMESPACE} namespace"
             exit 1
           fi
 
       - name: Check Redis keys in no-helm namespace
         run: |
-          COUNT=$(kubectl run -i redis-client -n no-helm --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
-          echo "Redis key count in no-helm namespace: $COUNT"
+          export NAMESPACE=no-helm
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
-            echo "No keys found in Redis in no-helm namespace"
+            echo "No keys found in Redis in ${NAMESPACE} namespace"
             exit 1
           fi
 
       - name: Dump pod logs and describe (no-helm namespace)
         if: failure()
         run: |
-          echo "=== Pod describe (no-helm) ==="
-          kubectl describe pods -n no-helm || true
-          echo "=== Pod logs (no-helm) ==="
-          for pod in $(kubectl get pods -n no-helm -o jsonpath='{.items[*].metadata.name}'); do
+          export NAMESPACE=no-helm
+          echo "=== Pod describe (${NAMESPACE}) ==="
+          kubectl describe pods -n ${NAMESPACE} || true
+          echo "=== Pod logs (${NAMESPACE}) ==="
+          for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n no-helm $pod || true
+            kubectl logs -n ${NAMESPACE} $pod || true
           done
-          kubectl get configmap -n no-helm
+          kubectl get configmap -n ${NAMESPACE}
+
+  helm-deploy-test-custom-secret:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@v0.0.20
+        with:
+          cache: true
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Create custom stigg secret
+        run: |
+          export NAMESPACE=helm-custom
+          kubectl create ns ${NAMESPACE}
+          kubectl create secret generic custom-stigg-api-keys \
+            --from-literal=stigg_server_api_key=${{ secrets.STIGG_SERVER_API_KEY }} \
+            --from-literal=stigg_client_api_key="" \
+            -n ${NAMESPACE}
+
+      - name: Patch values.yaml files with secrets
+        env:
+          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+        run: |
+          sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
+
+      - name: Deploy with Helm (custom secret)
+        run: |
+          export NAMESPACE=helm-custom
+          cp -r stigg-chart example-app-chart/charts
+          helm install -n ${NAMESPACE} example-app ./example-app-chart \
+            --set stigg.apiKeysSecretName=custom-stigg-api-keys
+          echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
+          kubectl get pods -n ${NAMESPACE}
+
+      - name: Port-forward app pod in helm-custom namespace and test
+        run: |
+          export NAMESPACE=helm-custom
+          APP_POD=$(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n ${NAMESPACE} $APP_POD 9092:9090 &
+          sleep 5
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9092?customer_id=helm-ci&feature_id=feature-join-community")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Received HTTP $STATUS from app pod in ${NAMESPACE} namespace"
+            exit 1
+          fi
+
+      - name: Check Redis keys in helm-custom namespace
+        run: |
+          export NAMESPACE=helm-custom
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No keys found in Redis in ${NAMESPACE} namespace"
+            exit 1
+          fi
+
+      - name: Check extra ConfigMap deployment
+        run: |
+          export NAMESPACE=helm-custom
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE}
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o yaml
+          VALUE=$(kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o jsonpath='{.data.test-key}')
+          if [ "$VALUE" != "test-value" ]; then
+            echo "ConfigMap test-key value is not correct: $VALUE"
+            exit 1
+          fi
+
+      - name: Dump pod logs and describe (helm-custom namespace)
+        if: failure()
+        run: |
+          export NAMESPACE=helm-custom
+          echo "=== Pod describe (${NAMESPACE}) ==="
+          kubectl describe pods -n ${NAMESPACE} || true
+          echo "=== Pod logs (${NAMESPACE}) ==="
+          for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Logs for $pod ---"
+            kubectl logs -n ${NAMESPACE} $pod || true
+          done
+          echo "=== ConfigMaps (${NAMESPACE}) ==="
+          kubectl get configmap -n ${NAMESPACE}
