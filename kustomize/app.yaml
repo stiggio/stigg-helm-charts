@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-code
+  labels:
+    app: app-code
+data:
+  # this is for test purposes and for real world application a docker image will be used
+  app.py: |-
+    import asyncio
+    import io
+    import os
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from stigg_sidecar_sdk import Stigg, ApiConfig, GetEntitlementRequest
+    from urllib.parse import urlparse, parse_qs
+    
+    stigg = None
+    def setup_stigg():
+        global stigg
+        api_key = os.environ.get("SERVER_API_KEY")
+        if not api_key:
+            raise ValueError("SERVER_API_KEY environment variable is not set")
+        
+        print("Initializing Stigg Sidecar SDK")
+        stigg = Stigg(
+            # To access the API you need to set the server AP key
+            ApiConfig(
+                api_key=api_key,
+            ),
+            # For production use, set remote sidecar host and port:
+            remote_sidecar_host='localhost',
+            remote_sidecar_port=80
+        )
+    
+    
+    class SimpleHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            # Parse query parameters
+            query = urlparse(self.path).query
+            params = parse_qs(query)
+            customer_id = params.get('customer_id', ['customer-demo-01'])[0]
+            feature_id = params.get('feature_id', ['feature-example-1'])[0]
+    
+            buffer = io.BytesIO()
+            buffer.write(b'Hello from Python HTTP server!\n')
+            buffer.write(f'customer id: {customer_id}, feature id: {feature_id}\n'.encode())
+            return_code = self._check_entitlement(customer_id, feature_id, buffer)
+            
+            self.send_response(return_code)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(buffer.getvalue())
+            buffer.close()
+    
+        def _check_entitlement(self, customer_id, feature_id, buffer) -> int:
+            if stigg is None:
+                buffer.write(b'Stigg SDK not initialized properly\n')
+                return 500
+    
+            try:
+                resp = asyncio.get_event_loop().run_until_complete(
+                    stigg.get_entitlement(GetEntitlementRequest(
+                        customer_id=customer_id,
+                        feature_id=feature_id
+                    )))
+            except Exception as e:
+                buffer.write(f'Error checking entitlement: {e}\n'.encode())
+                return 500
+    
+            if not resp.has_access:
+                buffer.write(b'Customer does NOT have access to the feature\n')
+                return 403
+    
+            buffer.write(b'Customer has access to the feature\n')
+    
+            # Check the specific entitlement type
+            if resp.boolean:
+                buffer.write(b'Boolean feature enabled\n')
+            elif resp.numeric:
+                buffer.write(f'Numeric value: {resp.numeric.value}\n'.encode())
+                buffer.write(f'Is unlimited: {resp.numeric.is_unlimited}\n'.encode())
+            elif resp.metered:
+                buffer.write(f'Usage limit: {resp.metered.usage_limit}\n'.encode())
+                buffer.write(f'Current usage: {resp.metered.current_usage}\n'.encode())
+                buffer.write(f'Is unlimited: {resp.metered.is_unlimited}\n'.encode())
+            return 200
+    
+    if __name__ == "__main__":
+        setup_stigg()
+        server = HTTPServer(('0.0.0.0', 9090), SimpleHandler)
+        print("Starting server on port 9090...")
+        server.serve_forever()
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  labels:
+    app: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      containers:
+        - name: python-app
+          image: python:3.9-slim
+          command:
+            - /bin/sh
+            - -c
+            - |
+              pip install --upgrade pip && \
+              pip install stigg-sidecar-sdk==3.101.0 pydantic-core==2.16.1 && \
+              python -u /app/app.py
+          ports:
+            - containerPort: 9090
+          readinessProbe:
+            tcpSocket:
+              port: 9090          
+          volumeMounts:
+            - name: app-code
+              mountPath: /app/app.py
+              subPath: app.py
+          env: []
+      volumes:
+        - name: app-code
+          configMap:
+            name: app-code

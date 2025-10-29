@@ -1,0 +1,8 @@
+{{- if not .Values.extraDeploy }}
+# No extra objects to deploy
+{{- end }}
+{{- $root := . -}}
+{{- range $obj := .Values.extraDeploy }}
+---
+{{- toYaml $obj | nindent 0 }}
+{{- end }}

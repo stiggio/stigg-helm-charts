@@ -1,0 +1,5 @@
+# ignore sub charts
+example-app-chart/charts/*
+!example-app-chart/charts/.gitkeep
+kustomize/generated/*
+!kustomize/generated/.gitkeep
