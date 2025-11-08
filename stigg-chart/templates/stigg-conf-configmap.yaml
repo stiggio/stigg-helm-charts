@@ -8,5 +8,8 @@ metadata:
 data:
   REDIS_ENVIRONMENT_PREFIX: {{ .Values.redisEnvironmentPrefix | quote }}
   REDIS_HOST: {{ .Values.redisHost | quote }}
+  REDIS_PORT: {{ .Values.redisPort | quote }}
+  REDIS_DB: {{ .Values.redisDb | quote }}
+  REDIS_TLS: {{ .Values.redisTls | quote }}
   AWS_REGION: {{ .Values.awsRegion | quote }}
   QUEUE_URL: {{ .Values.queueUrl | quote }}

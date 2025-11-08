@@ -1,5 +1,5 @@
 {{- /* A required deployment for running in 'persistent-caching' mode */ -}}
-{{- if eq .Values.persistentCaching true }}
+{{- if eq .Values.persistentCache true }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

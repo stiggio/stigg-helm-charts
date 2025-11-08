@@ -15,5 +15,32 @@ spec:
       containers:
         - name: redis
           image: redis:7.2.4
+          command:
+            - redis-server
+            - --requirepass
+            - $(REDIS_PASSWORD)
+            - --tls-port
+            - "6379"
+            - --port
+            - "0"
+            - --tls-cert-file
+            - /tls/tls.crt
+            - --tls-key-file
+            - /tls/tls.key
+            - --tls-ca-cert-file
+            - /tls/ca.crt
+            - --tls-auth-clients
+            - "no"
+          env:
+            - name: REDIS_PASSWORD
+              value: "myredispassword"
           ports:
             - containerPort: 6379
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /tls
+              readOnly: true
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: redis-tls-certs
