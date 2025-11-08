@@ -27,6 +27,11 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Generate Redis TLS certificates
+        run: |
+          openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
+          cp redis-tls.crt redis-ca.crt
+
       - name: Patch values.yaml files with secrets
         env:
           STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
@@ -34,11 +39,20 @@ jobs:
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"myredispassword\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
           export NAMESPACE=helm
           kubectl create ns ${NAMESPACE}
+          
+          # Create Redis TLS secret
+          kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
+            --from-file=tls.crt=redis-tls.crt \
+            --from-file=tls.key=redis-tls.key \
+            --from-file=ca.crt=redis-ca.crt
+          
           cp -r stigg-chart example-app-chart/charts
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
@@ -62,7 +76,7 @@ jobs:
       - name: Check Redis keys in helm namespace
         run: |
           export NAMESPACE=helm
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
@@ -115,6 +129,11 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Generate Redis TLS certificates
+        run: |
+          openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
+          cp redis-tls.crt redis-ca.crt
+
       - name: Patch values.yaml files with secrets
         env:
           STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
@@ -125,12 +144,21 @@ jobs:
           sed -i "s|^\( *persistentCache: *\).*|\1true|" stigg-chart/values.yaml
           sed -i "s|^\( *redisEnvironmentPrefix: *\).*|\1production|" stigg-chart/values.yaml
           sed -i "s|^\( *redisHost: *\).*|\1redis|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisPassword: *\).*|\1\"myredispassword\"|" stigg-chart/values.yaml
+          sed -i "s|^\( *redisTls: *\).*|\1true|" stigg-chart/values.yaml
           sed -i "s|^\( *awsRegion: *\).*|\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
         run: |
           export NAMESPACE=no-helm
           kubectl create ns ${NAMESPACE}
+          
+          # Create Redis TLS secret
+          kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
+            --from-file=tls.crt=redis-tls.crt \
+            --from-file=tls.key=redis-tls.key \
+            --from-file=ca.crt=redis-ca.crt
+          
           helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
           kubectl kustomize kustomize > kustomize/generated/app-manifests.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/stigg-manifests.yaml
@@ -157,7 +185,7 @@ jobs:
       - name: Check Redis keys in no-helm namespace
         run: |
           export NAMESPACE=no-helm
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
@@ -198,6 +226,11 @@ jobs:
         with:
           version: 'latest'
 
+      - name: Generate Redis TLS certificates
+        run: |
+          openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
+          cp redis-tls.crt redis-ca.crt
+
       - name: Create custom stigg secret
         run: |
           export NAMESPACE=helm-custom
@@ -212,10 +245,19 @@ jobs:
           STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
         run: |
           sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"myredispassword\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm (custom secret)
         run: |
           export NAMESPACE=helm-custom
+          
+          # Create Redis TLS secret
+          kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
+            --from-file=tls.crt=redis-tls.crt \
+            --from-file=tls.key=redis-tls.key \
+            --from-file=ca.crt=redis-ca.crt
+          
           cp -r stigg-chart example-app-chart/charts
           helm install -n ${NAMESPACE} example-app ./example-app-chart \
             --set stiggchart.apiKeysSecretName=custom-stigg-api-keys
@@ -240,7 +282,7 @@ jobs:
       - name: Check Redis keys in helm-custom namespace
         run: |
           export NAMESPACE=helm-custom
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
