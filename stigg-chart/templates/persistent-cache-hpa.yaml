@@ -1,0 +1,35 @@
+{{- /* HPA for persistent-cache-service, enabled automatically when persistentCache is true */ -}}
+{{- if eq .Values.persistentCache true }}
+{{- if .Capabilities.APIVersions.Has "autoscaling/v2" -}}
+apiVersion: autoscaling/v2
+{{- else -}}
+apiVersion: autoscaling/v2beta2
+{{- end }}
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stigg-persistent-cache
+  labels:
+    app: stigg-persistent-cache
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stigg-persistent-cache
+  minReplicas: {{ .Values.persistentCacheHpa.minReplicas }}
+  maxReplicas: {{ .Values.persistentCacheHpa.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.persistentCacheHpa.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.persistentCacheHpa.targetMemoryUtilizationPercentage }}
+{{- end }}

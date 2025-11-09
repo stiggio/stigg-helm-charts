@@ -37,5 +37,19 @@ redisTls: false
 awsRegion: ""
 ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
 queueUrl: ""
+## @param persistentCacheResources Resource requests and limits for persistent cache service
+persistentCacheResources:
+  cpu:
+    request: "1000m"
+    limit: "1000m"
+  memory:
+    request: "512Mi"
+    limit: "640Mi"
+## @param persistentCacheHpa Horizontal Pod Autoscaler configuration for persistent cache service
+persistentCacheHpa:
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
 ## @param extraDeploy Array of extra objects to deploy with the release
 extraDeploy: []
