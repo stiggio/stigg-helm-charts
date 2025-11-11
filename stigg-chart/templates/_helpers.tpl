@@ -73,11 +73,6 @@
     secretKeyRef:
       name: {{ $vals.apiKeysSecretName }}
       key: stigg_server_api_key
-- name: CLIENT_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ $vals.apiKeysSecretName }}
-      key: stigg_client_api_key
 {{- else }}
 # using stigg secret
 - name: SERVER_API_KEY
@@ -85,11 +80,6 @@
     secretKeyRef:
       name: stigg-api-keys
       key: SERVER_API_KEY
-- name: CLIENT_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: stigg-api-keys
-      key: CLIENT_API_KEY
 {{- end }}
 {{- end }}
 
