@@ -148,6 +148,7 @@ jobs:
           sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
           sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" stigg-chart/values.yaml
           sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" stigg-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" stigg-chart/values.yaml
           sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
