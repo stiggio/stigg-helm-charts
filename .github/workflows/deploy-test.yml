@@ -105,7 +105,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod --all-containers=true | true
+            kubectl logs -n ${NAMESPACE} $pod | true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
@@ -205,7 +205,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod --all-containers=true | true
+            kubectl logs -n ${NAMESPACE} $pod | true
           done
           kubectl get configmap -n ${NAMESPACE}
 
@@ -315,7 +315,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod --all-containers=true | true
+            kubectl logs -n ${NAMESPACE} $pod | true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
