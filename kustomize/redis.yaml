@@ -15,8 +15,34 @@ spec:
       containers:
         - name: redis
           image: redis:7.2.4
+          command:
+            - /bin/sh
+            - -c
+            - |
+              redis-server \
+                --requirepass "$REDIS_PASSWORD" \
+                --tls-port 6379 \
+                --port 0 \
+                --tls-cert-file /tls/tls.crt \
+                --tls-key-file /tls/tls.key \
+                --tls-ca-cert-file /tls/ca.crt \
+                --tls-auth-clients no
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stigg-redis-auth
+                  key: REDIS_PASSWORD
           ports:
             - containerPort: 6379
+          volumeMounts:
+            - name: tls-certs
+              mountPath: /tls
+              readOnly: true
+      volumes:
+        - name: tls-certs
+          secret:
+            secretName: redis-tls-certs
 ---
 apiVersion: v1
 kind: Service

@@ -4,28 +4,35 @@
 #
 # stiggchart:
 #   serverApiKey: "your-server-api-key"
-#   clientApiKey: "your-client-api-key"
 
 ## @param serverApiKey Stigg server API key to store in a new created secret
-serverApiKey: ""
-## @param clientApiKey Stigg client API key to store in a new created secret
-clientApiKey: ""
-## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" and "stigg_client_api_key" defined.
-## This ignores serverApiKey and clientApiKey
+serverApiKey: "<SERVER_API_KEY>"
+## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" defined.
+## This ignores serverApiKey
 apiKeysSecretName: ""
 ## @param sidecarImageTag Docker image tag for the Stigg Sidecar
 sidecarImageTag: "latest"
 ## @param persistentCacheImageTag Docker image tag for the Stigg Persistent Cache
 persistentCacheImageTag: "2.39.0"
-## @param persistentCaching Enable persistent caching (true/false)
-persistentCaching: false
+## @param persistentCache Enable persistent cache (true/false)
+persistentCache: false
 ## @param redisEnvironmentPrefix Prefix for Redis environment keys
 redisEnvironmentPrefix: ""
 ## @param redisHost Hostname for Redis instance
 redisHost: ""
+## @param redisPort Redis port (default: 6379)
+redisPort: "6379"
+## @param redisDb Redis DB identifier (default: 0)
+redisDb: "0"
+## @param redisUsername Redis username (optional)
+redisUsername: ""
+## @param redisPassword Redis password (optional)
+redisPassword: "testpassword"
+## @param redisTls Enable TLS for Redis connection (true/false)
+redisTls: true
 ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
 awsRegion: ""
 ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
-queueUrl: ""
+queueUrl: "<QUEUE_URL>"
 ## @param extraDeploy Array of extra objects to deploy with the release
 extraDeploy: []

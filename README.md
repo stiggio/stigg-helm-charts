@@ -4,7 +4,7 @@ Kubernetes is a powerful open-source platform for automating deployment, scaling
 
 ## Stigg components
 - [Stigg Sidecar documentation](https://docs.stigg.io/docs/sidecar)
-- [Stigg Persistent Caching documentation](https://docs.stigg.io/docs/persistent-caching)
+- [Stigg Persistent cache documentation](https://docs.stigg.io/docs/persistent-caching)
 
 Stigg provides two main components for feature management and entitlement checks in your applications:
 
@@ -99,7 +99,9 @@ This section provides a step-by-step tutorial for deploying the example app with
 
    By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `redisHost` to point to your external Redis instance.
 
-   If you do not want to use persistent caching, you can disable it by setting `persistentCaching: false` in the values file.
+   > **⚠️ Important:** When using persistent cache (`persistentCache: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
+
+   If you do not want to use persistent cache, you can disable it by setting `persistentCache: false` in the values file.
 
    First, we'll create a namespace to provision resources:
    ```sh
@@ -107,49 +109,84 @@ This section provides a step-by-step tutorial for deploying the example app with
    kubectl create ns ${NAMESPACE}
    ```
 
-2. **Copy the stigg-chart to be a sub-chart of the example app:**
+2. **Generate TLS certificates for Redis (required when persistentCache is true):**
+   When persistent cache is enabled, Redis must be secured with TLS and authentication. For local development you can generate self-signed certificates:
+   ```sh
+   # Generate TLS certificates
+   openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
+   cp redis-tls.crt redis-ca.crt
+   
+   # Create Kubernetes secret with certificates
+   kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
+     --from-file=tls.crt=redis-tls.crt \
+     --from-file=tls.key=redis-tls.key \
+     --from-file=ca.crt=redis-ca.crt
+   ```
+   
+   Then update `example-app-chart/values.yaml` to configure Redis TLS and authentication:
+   ```yaml
+   stiggchart:
+     persistentCache: true            # Enable persistent cache
+     redisHost: "redis"
+     redisPort: "6379"
+     redisDb: "0"
+     redisUsername: "default"          # Redis username (optional)
+     redisPassword: "your-password"    # Redis password (REQUIRED when persistentCache is true)
+     redisTls: true                     # Enable TLS (REQUIRED when persistentCache is true)
+   ```
+   
+   > **⚠️ Important:** When `persistentCache: true`, both `redisTls: true` and `redisPassword` are **mandatory**. Redis is assumed to run with TLS and authentication for security.
+   
+   > **⚠️ Note:** For production deployments, use properly signed certificates from a trusted Certificate Authority (CA) instead of self-signed certificates.
+
+3. **Copy the stigg-chart to be a sub-chart of the example app:**
    ```sh
    cp -r stigg-chart example-app-chart/charts
    ```
 
-3. **Deploy the app and dependencies:**
+4. **Deploy the app and dependencies:**
    Use Helm to install the example app chart (which now includes the stigg sub-chart):
    ```sh
    helm install -n ${NAMESPACE} example-app ./example-app-chart
    ```
 
-4. **Inspect the app deployment:**
+5. **Inspect the app deployment:**
    ```sh
    kubectl describe -n ${NAMESPACE} pod $(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
    kubectl logs -n ${NAMESPACE} $(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
    ```
 
-5. **Port-forward app to a local port:**
+6. **Port-forward app to a local port:**
    ```sh
    kubectl port-forward -n ${NAMESPACE} $(kubectl get pods -l app=app -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}') 9090
    ```
-
-6. **Send a request:**
+7. **Send a request:**
    ```sh
-   curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
+   curl "localhost:9090?customer_id=<CUSTOMER-ID>&feature_id=<FEATURE-ID>"
    ```
 
-7. **Inspect the redis content:**
+8. **Inspect the redis content:**
    ```sh
-   kubectl run -it redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 KEYS '*'
+   # Redis with TLS and authentication (required for persistent cache)
+   kubectl run -it redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a your-password KEYS '*'
    ```
-
-8. **Uninstall all resources:**
-   To remove all resources created by the example app and its dependencies, run:
-   ```sh
-   helm uninstall -n ${NAMESPACE} example-app
-   kubectl delete ns ${NAMESPACE}
-   ```
+   
+   > **Note:** Replace `your-password` with the actual Redis password you configured in `values.yaml`.
 
 ### Production usage
 
 To use the Helm chart in production:
 - Review and customize the `values.yaml` file to fit your environment (e.g., API keys, image tags, resource limits).
+- **Enable Redis TLS and authentication** for secure communication:
+  - Generate proper TLS certificates from a trusted CA (not self-signed)
+  - Set `redisTls: true` and configure `redisUsername` and `redisPassword`
+  - Available Redis configuration parameters:
+    - `redisHost`: Redis server hostname
+    - `redisPort`: Redis server port (default: "6379")
+    - `redisDb`: Redis database number (default: "0")
+    - `redisUsername`: Redis username (optional)
+    - `redisPassword`: Redis password (recommended)
+    - `redisTls`: Enable TLS encryption (recommended: true)
 - Update your Charts to utilize `stigg-chart` as a sub-chart of your app, or alternatively deploy the Stigg as a standalone chart. Either way, additional changes might be necessary to fit your specific deployment setup. 
 - Monitor your deployments and use Kubernetes best practices for scaling, security, and reliability.
 - Refer to [Helm best practices](https://helm.sh/docs/chart_best_practices/) for production deployments.
@@ -159,12 +196,12 @@ To use the Helm chart in production:
 ## Using Kubectl
 
 If you do not want to use Helm directly, you can render the Kubernetes manifests using `helm template` and `kubectl kustomize` commands and apply them with `kubectl`.
-1. First, edit the values in `./stigg-chart/values.yaml` to match your setup (api key, persistent caching, etc.). 
+1. First, edit the values in `./stigg-chart/values.yaml` to match your setup (api key, persistent cache, etc.). 
 2. Generate the Stigg components manifests:
     ```sh
     helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
     ```
-    Manifests should include an api-keys secret. If persistent caching is enabled, a delpoyment resource will be added as well.
+    Manifests should include an api-keys secret. If persistent cache is enabled, a delpoyment resource will be added as well.
 3. Use the `kubectl` cli to add a stigg side-car to your app deployment and ensure your app has access to Stigg api-keys:
     ```sh
     kubectl kustomize kustomize > kustomize/generated/app-manifests.yaml
@@ -179,7 +216,7 @@ If you do not want to use Helm directly, you can render the Kubernetes manifests
     # provision stigg resources
     kubectl apply -n ${NAMESPACE} -f kustomize/generated/stigg-manifests.yaml
 
-    # create a redis if running with persistent-caching
+    # create a redis if running with persistent cache
     kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
     
     # provision the app
@@ -189,7 +226,7 @@ If you do not want to use Helm directly, you can render the Kubernetes manifests
     ```sh
     kubectl port-forward -n ${NAMESPACE} $(kubectl get pods -l app=app -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}') 9090
 
-    curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
+    curl "localhost:9090?customer_id=<CUSTOMER-ID>&feature_id=<FEATURE-ID>"
     ```
 6. Clean resources (after closing all connections to pods):
     ```sh

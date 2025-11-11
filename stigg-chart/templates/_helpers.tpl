@@ -3,6 +3,7 @@
 {{- /* */ -}}
 
 {{- define "stigg.redisEnv" }}
+{{- $vals := .Values.stiggchart | default .Values }}
 - name: REDIS_ENVIRONMENT_PREFIX
   valueFrom:
     configMapKeyRef:
@@ -13,6 +14,35 @@
     configMapKeyRef:
       name: stigg-conf
       key: REDIS_HOST
+- name: REDIS_PORT
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: REDIS_PORT
+- name: REDIS_DB
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: REDIS_DB
+- name: REDIS_TLS
+  valueFrom:
+    configMapKeyRef:
+      name: stigg-conf
+      key: REDIS_TLS
+{{- if $vals.redisUsername }}
+- name: REDIS_USERNAME
+  valueFrom:
+    secretKeyRef:
+      name: stigg-redis-auth
+      key: REDIS_USERNAME
+{{- end }}
+{{- if $vals.redisPassword }}
+- name: REDIS_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: stigg-redis-auth
+      key: REDIS_PASSWORD
+{{- end }}
 {{- end }}
 
 {{- define "stigg.sqsEnv" }}
@@ -43,11 +73,6 @@
     secretKeyRef:
       name: {{ $vals.apiKeysSecretName }}
       key: stigg_server_api_key
-- name: CLIENT_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: {{ $vals.apiKeysSecretName }}
-      key: stigg_client_api_key
 {{- else }}
 # using stigg secret
 - name: SERVER_API_KEY
@@ -55,11 +80,6 @@
     secretKeyRef:
       name: stigg-api-keys
       key: SERVER_API_KEY
-- name: CLIENT_API_KEY
-  valueFrom:
-    secretKeyRef:
-      name: stigg-api-keys
-      key: CLIENT_API_KEY
 {{- end }}
 {{- end }}
 

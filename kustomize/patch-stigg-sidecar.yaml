@@ -9,11 +9,6 @@
           secretKeyRef:
             name: stigg-api-keys
             key: SERVER_API_KEY
-      - name: CLIENT_API_KEY
-        valueFrom:
-          secretKeyRef:
-            name: stigg-api-keys
-            key: CLIENT_API_KEY
       - name: REDIS_ENVIRONMENT_PREFIX
         valueFrom:
           configMapKeyRef:
@@ -24,3 +19,28 @@
           configMapKeyRef:
             name: stigg-conf
             key: REDIS_HOST
+      - name: REDIS_PORT
+        valueFrom:
+          configMapKeyRef:
+            name: stigg-conf
+            key: REDIS_PORT
+      - name: REDIS_DB
+        valueFrom:
+          configMapKeyRef:
+            name: stigg-conf
+            key: REDIS_DB
+      - name: REDIS_TLS
+        valueFrom:
+          configMapKeyRef:
+            name: stigg-conf
+            key: REDIS_TLS
+      - name: REDIS_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: stigg-redis-auth
+            key: REDIS_USERNAME
+      - name: REDIS_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: stigg-redis-auth
+            key: REDIS_PASSWORD
