@@ -4,14 +4,11 @@
 #
 # stiggchart:
 #   serverApiKey: "your-server-api-key"
-#   clientApiKey: "your-client-api-key"
 
 ## @param serverApiKey Stigg server API key to store in a new created secret
-serverApiKey: ""
-## @param clientApiKey Stigg client API key to store in a new created secret
-clientApiKey: ""
-## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" and "stigg_client_api_key" defined.
-## This ignores serverApiKey and clientApiKey
+serverApiKey: "<SERVER_API_KEY>"
+## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" defined.
+## This ignores serverApiKey
 apiKeysSecretName: ""
 ## @param sidecarImageTag Docker image tag for the Stigg Sidecar
 sidecarImageTag: "latest"
@@ -30,13 +27,13 @@ redisDb: "0"
 ## @param redisUsername Redis username (optional)
 redisUsername: ""
 ## @param redisPassword Redis password (optional)
-redisPassword: ""
+redisPassword: "testpassword"
 ## @param redisTls Enable TLS for Redis connection (true/false)
-redisTls: false
+redisTls: true
 ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
 awsRegion: ""
 ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
-queueUrl: ""
+queueUrl: "<QUEUE_URL>"
 ## @param persistentCacheResources Resource requests and limits for persistent cache service
 persistentCacheResources:
   cpu:

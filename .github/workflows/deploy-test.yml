@@ -36,10 +36,15 @@ jobs:
         env:
           STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
           STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"myredispassword\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm
@@ -74,9 +79,11 @@ jobs:
           fi
 
       - name: Check Redis keys in helm namespace
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           export NAMESPACE=helm
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a ${REDIS_PASSWORD} DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
@@ -103,7 +110,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod || true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
@@ -138,15 +145,16 @@ jobs:
         env:
           STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
           STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
-          sed -i "s|^\( *persistentCache: *\).*|\1true|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisEnvironmentPrefix: *\).*|\1production|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisHost: *\).*|\1redis|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisPassword: *\).*|\1\"myredispassword\"|" stigg-chart/values.yaml
-          sed -i "s|^\( *redisTls: *\).*|\1true|" stigg-chart/values.yaml
-          sed -i "s|^\( *awsRegion: *\).*|\1us-east-2|" stigg-chart/values.yaml
+          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" stigg-chart/values.yaml
+          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
+          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" stigg-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" stigg-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" stigg-chart/values.yaml
+          sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
         run: |
@@ -183,9 +191,11 @@ jobs:
           fi
 
       - name: Check Redis keys in no-helm namespace
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           export NAMESPACE=no-helm
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a ${REDIS_PASSWORD} DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
@@ -201,7 +211,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod || true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           kubectl get configmap -n ${NAMESPACE}
 
@@ -237,15 +247,18 @@ jobs:
           kubectl create ns ${NAMESPACE}
           kubectl create secret generic custom-stigg-api-keys \
             --from-literal=stigg_server_api_key=${{ secrets.STIGG_SERVER_API_KEY }} \
-            --from-literal=stigg_client_api_key="" \
             -n ${NAMESPACE}
 
       - name: Patch values.yaml files with secrets
         env:
           STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"myredispassword\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm (custom secret)
@@ -280,9 +293,11 @@ jobs:
           fi
 
       - name: Check Redis keys in helm-custom namespace
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           export NAMESPACE=helm-custom
-          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a myredispassword DBSIZE | head -n 1)
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a ${REDIS_PASSWORD} DBSIZE | head -n 1)
           echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
           if [ "$COUNT" -eq 0 ]; then
             echo "No keys found in Redis in ${NAMESPACE} namespace"
@@ -309,7 +324,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod || true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
