@@ -32,7 +32,7 @@ redisUsername: ""
 ## @param redisPassword Redis password (optional)
 redisPassword: ""
 ## @param redisTls Enable TLS for Redis connection (true/false)
-redisTls: false
+redisTls: true
 ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
 awsRegion: ""
 ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg

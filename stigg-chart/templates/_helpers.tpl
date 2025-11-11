@@ -29,7 +29,6 @@
     configMapKeyRef:
       name: stigg-conf
       key: REDIS_TLS
-{{- if or $vals.redisUsername $vals.redisPassword }}
 {{- if $vals.redisUsername }}
 - name: REDIS_USERNAME
   valueFrom:
@@ -43,7 +42,6 @@
     secretKeyRef:
       name: stigg-redis-auth
       key: REDIS_PASSWORD
-{{- end }}
 {{- end }}
 {{- end }}
 
@@ -104,7 +102,7 @@
 {{- if and (eq .Values.stiggchart.serverApiKey "") (eq .Values.stiggchart.apiKeysSecretName "") }}
   {{- fail "Either serverApiKey or apiKeysSecretName must be set to run the sidecar!" }}
 {{- end }}
-{{- if eq .Values.stiggchart.persistentCache true }}
+{{- if eq .Values.stiggchart.persistentCaching true }}
 {{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}
   ports:

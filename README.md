@@ -162,7 +162,7 @@ This section provides a step-by-step tutorial for deploying the example app with
    ```
 7. **Send a request:**
    ```sh
-   curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
+   curl "localhost:9090?customer_id=<CUSTOMER-ID>&feature_id=<FEATURE-ID>"
    ```
 
 8. **Inspect the redis content:**
@@ -172,14 +172,6 @@ This section provides a step-by-step tutorial for deploying the example app with
    ```
    
    > **Note:** Replace `your-password` with the actual Redis password you configured in `values.yaml`.
-
-9. **Uninstall all resources:**
-8. **Uninstall all resources:**
-   To remove all resources created by the example app and its dependencies, run:
-   ```sh
-   helm uninstall -n ${NAMESPACE} example-app
-   kubectl delete ns ${NAMESPACE}
-   ```
 
 ### Production usage
 
@@ -234,7 +226,7 @@ If you do not want to use Helm directly, you can render the Kubernetes manifests
     ```sh
     kubectl port-forward -n ${NAMESPACE} $(kubectl get pods -l app=app -n ${NAMESPACE} -o jsonpath='{.items[0].metadata.name}') 9090
 
-    curl "localhost:9090?customer_id=<CUSTOMER-ID>>&feature_id=<FEATURE-ID>"
+    curl "localhost:9090?customer_id=<CUSTOMER-ID>&feature_id=<FEATURE-ID>"
     ```
 6. Clean resources (after closing all connections to pods):
     ```sh
