@@ -41,6 +41,11 @@ jobs:
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
@@ -105,7 +110,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod | true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
@@ -206,7 +211,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod | true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           kubectl get configmap -n ${NAMESPACE}
 
@@ -242,7 +247,6 @@ jobs:
           kubectl create ns ${NAMESPACE}
           kubectl create secret generic custom-stigg-api-keys \
             --from-literal=stigg_server_api_key=${{ secrets.STIGG_SERVER_API_KEY }} \
-            --from-literal=stigg_client_api_key="" \
             -n ${NAMESPACE}
 
       - name: Patch values.yaml files with secrets
@@ -251,7 +255,11 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
           sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm (custom secret)
         run: |
@@ -316,7 +324,7 @@ jobs:
           echo "=== Pod logs (${NAMESPACE}) ==="
           for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
             echo "--- Logs for $pod ---"
-            kubectl logs -n ${NAMESPACE} $pod | true
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}

@@ -6,7 +6,7 @@
 #   serverApiKey: "your-server-api-key"
 
 ## @param serverApiKey Stigg server API key to store in a new created secret
-serverApiKey: ""
+serverApiKey: "<SERVER_API_KEY>"
 ## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" defined.
 ## This ignores serverApiKey
 apiKeysSecretName: ""
@@ -33,6 +33,6 @@ redisTls: true
 ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
 awsRegion: ""
 ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
-queueUrl: ""
+queueUrl: "<QUEUE_URL>"
 ## @param extraDeploy Array of extra objects to deploy with the release
 extraDeploy: []
