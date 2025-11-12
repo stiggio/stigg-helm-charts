@@ -2,6 +2,7 @@ stiggchart:
   serverApiKey: "${STIGG_SERVER_API_KEY}"
   sidecar:
     imageTag: "latest"
+    standalone: false
   persistentCache: 
     enabled: true
     redis:

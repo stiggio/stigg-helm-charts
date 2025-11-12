@@ -326,3 +326,121 @@ jobs:
           done
           echo "=== ConfigMaps (${NAMESPACE}) ==="
           kubectl get configmap -n ${NAMESPACE}
+
+  helm-deploy-test-standalone-sidecar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@v0.0.20
+        with:
+          cache: true
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Generate Redis TLS certificates
+        run: |
+          openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
+          cp redis-tls.crt redis-ca.crt
+
+      - name: Patch values.yaml files
+        env:
+          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
+          STIGG_SQS_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+        run: |
+          envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
+          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
+          sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *standalone: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i 's/1000m/500m/g' stigg-chart/values.yaml 
+
+      - name: Patch app code to reach sidecar service
+        run: |
+          sed -i 's/localhost/stigg-sidecar/g' example-app-chart/appCode.py
+          
+      - name: Patch app chart to remove sidecar container
+        run: |
+          sed -i '/stigg\.sidecar/d' example-app-chart/templates/example-app-deployment.tpl
+
+      - name: Deploy with Helm
+        run: |
+          export NAMESPACE=helm-standalone-sidecar
+          kubectl create ns ${NAMESPACE}
+          
+          # Create Redis TLS secret
+          kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
+            --from-file=tls.crt=redis-tls.crt \
+            --from-file=tls.key=redis-tls.key \
+            --from-file=ca.crt=redis-ca.crt
+          
+          cp -r stigg-chart example-app-chart/charts
+          
+          helm install -n ${NAMESPACE} example-app ./example-app-chart
+          echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
+          kubectl get pods -n ${NAMESPACE}
+
+      - name: Port-forward app pod in helm namespace and test
+        run: |
+          export NAMESPACE=helm-standalone-sidecar
+          APP_POD=$(kubectl get pods -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          kubectl port-forward -n ${NAMESPACE} $APP_POD 9090:9090 &
+          sleep 5
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}\n" "http://localhost:9090?customer_id=helm-ci&feature_id=feature-join-community")
+          echo "$RESPONSE"
+          STATUS=$(echo "$RESPONSE" | grep HTTP_STATUS | cut -d: -f2)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Received HTTP $STATUS from app pod in ${NAMESPACE} namespace"
+            exit 1
+          fi
+
+      - name: Check Redis keys in helm namespace
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+        run: |
+          export NAMESPACE=helm-standalone-sidecar
+          COUNT=$(kubectl run -i redis-client -n ${NAMESPACE} --rm --image=redis:7.2.4 --restart=Never -- redis-cli -h redis -p 6379 --tls --insecure -a ${REDIS_PASSWORD} DBSIZE | head -n 1)
+          echo "Redis key count in ${NAMESPACE} namespace: $COUNT"
+          if [ "$COUNT" -eq 0 ]; then
+            echo "No keys found in Redis in ${NAMESPACE} namespace"
+            exit 1
+          fi
+
+      - name: Check extra ConfigMap deployment
+        run: |
+          export NAMESPACE=helm-standalone-sidecar
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE}
+          kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o yaml
+          VALUE=$(kubectl get configmap example-extra-configmap -n ${NAMESPACE} -o jsonpath='{.data.test-key}')
+          if [ "$VALUE" != "test-value" ]; then
+            echo "ConfigMap test-key value is not correct: $VALUE"
+            exit 1
+          fi
+
+      - name: Dump pod logs and describe (helm-standalone-sidecar namespace)
+        if: failure()
+        run: |
+          export NAMESPACE=helm-standalone-sidecar
+          echo "=== Pod describe (${NAMESPACE}) ==="
+          kubectl describe pods -n ${NAMESPACE} || true
+          echo "=== Pod logs (${NAMESPACE}) ==="
+          for pod in $(kubectl get pods -n ${NAMESPACE} -o jsonpath='{.items[*].metadata.name}'); do
+            echo "--- Logs for $pod ---"
+            kubectl logs -n ${NAMESPACE} $pod --all-containers=true --since=0 || true
+          done
+          echo "=== ConfigMaps (${NAMESPACE}) ==="
+          kubectl get configmap -n ${NAMESPACE}

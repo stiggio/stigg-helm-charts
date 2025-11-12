@@ -54,7 +54,7 @@ This example assumes you are running a local Kubernetes cluster using [minikube]
 
 When you deploy the example app with the Stigg charts, the following resources will be created in your cluster:
 - **example-app**: A pod running your sample application (e.g., Python HTTP server).
-- **stigg-sidecar**: A sidecar container running alongside the app, handling entitlement checks and feature flags
+- **stigg-sidecar**: A sidecar container running alongside the app or as a standalone deployment, handling entitlement checks and feature flags
 - **stigg-persistent-cache**: A deployment running the persistent cache service
 - **Redis**: A pod running Redis, used by the persistent cache for fast local storage
 - **Kubernetes Services**: For exposing the app and Redis within the cluster
@@ -98,6 +98,8 @@ This section provides a step-by-step tutorial for deploying the example app with
    Edit the `example-app-chart/values.yaml` file to set your sidecar and persistentCache configuration values required for your environment. The `stiggchart.persistentCache.awsRegion` and `stiggchart.persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS.
 
    By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `stiggchart.persistentCache.redis.host` to point to your external Redis instance.
+
+   By default, a stigg sidecar container will be provisioned alonside the example app. If you want to run it as a standalone service you can set the value in the example app `stiggchart.sidecar.standalone` to `true`.
 
    > **⚠️ Important:** When using persistent cache (`stiggchart.persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
 
@@ -218,7 +220,30 @@ To use the Helm chart in production:
         targetCPUUtilizationPercentage: 70
         targetMemoryUtilizationPercentage: 80
     ```
-  - Benchmarks: A single instance handles ~100 messages/sec with CPU averaging 60% (range 30-90%) under constant load and ~250MB memory footprint
+- **Configure resource limits and autoscaling for standalone sidecar**:
+  - The sidecar standalone deployment automatically includes resource requests/limits and Horizontal Pod Autoscaler (HPA) when `sidecar.standalone: true`
+  - Default configuration:
+    - CPU: 1 vCPU (1000m) request and limit
+    - Memory: 512Mi request, 640Mi limit
+    - HPA: min 1 replica, max 10 replicas
+    - CPU target: 70% utilization
+    - Memory target: 80% utilization
+  - Customize resource allocation in `values.yaml`:
+    ```yaml
+    sidecar:
+      deploymentResources:
+        cpu:
+          request: "1000m"
+          limit: "1500m"
+        memory:
+          request: "512Mi"
+          limit: "640Mi"
+      deploymentHPA:
+        minReplicas: 1
+        maxReplicas: 10
+        targetCPUUtilizationPercentage: 70
+        targetMemoryUtilizationPercentage: 80
+    ```
   - The service is stateless and horizontally scalable for higher throughput demands
   - **Important**: Ensure `metrics-server` is installed in your cluster for HPA to function properly
 - Update your Charts to utilize `stigg-chart` as a sub-chart of your app, or alternatively deploy the Stigg as a standalone chart. Either way, additional changes might be necessary to fit your specific deployment setup. 
