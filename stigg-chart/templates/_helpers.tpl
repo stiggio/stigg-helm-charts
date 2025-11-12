@@ -87,13 +87,13 @@
 {{- define "stigg.sidecar" }}
 {{- $vals := .Values.stiggchart | default .Values }}
 - name: stigg-sidecar
-  image: public.ecr.aws/stigg/sidecar:{{ $vals.stiggchart.sidecar.imageTag }}
+  image: public.ecr.aws/stigg/sidecar:{{ $vals.sidecar.imageTag }}
   env:
 {{- include "stigg.apikeys" . | indent 4 }}
-{{- if and (eq $vals.stiggchart.serverApiKey "") (eq $vals.stiggchart.apiKeysSecretName "") }}
+{{- if and (eq $vals.serverApiKey "") (eq $vals.apiKeysSecretName "") }}
   {{- fail "Either serverApiKey or apiKeysSecretName must be set to run the sidecar!" }}
 {{- end }}
-{{- if eq $vals.stiggchart.persistentCache.enabled true }}
+{{- if eq $vals.persistentCache.enabled true }}
 {{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}
   ports:
