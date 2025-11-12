@@ -200,7 +200,7 @@ To use the Helm chart in production:
     persistentCacheResources:
       cpu:
         request: "1000m"
-        limit: "1000m"
+        limit: "1500m"
       memory:
         request: "512Mi"
         limit: "640Mi"

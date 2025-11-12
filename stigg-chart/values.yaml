@@ -38,14 +38,14 @@ queueUrl: "<QUEUE_URL>"
 persistentCacheResources:
   cpu:
     request: "1000m"
-    limit: "1000m"
+    limit: "1500m"
   memory:
     request: "512Mi"
     limit: "640Mi"
 ## @param persistentCacheHpa Horizontal Pod Autoscaler configuration for persistent cache service
 persistentCacheHpa:
   minReplicas: 1
-  maxReplicas: 10
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 ## @param extraDeploy Array of extra objects to deploy with the release
