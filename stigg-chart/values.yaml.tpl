@@ -1,0 +1,59 @@
+## @section Common parameters
+# You can provide your own values when installing the chart.
+# You can override these values in your own Helm chart's values.yaml file. For example:
+#
+# stiggchart:
+#   serverApiKey: "your-server-api-key"
+
+## @param serverApiKey Stigg server API key to store in a new created secret
+serverApiKey: "${STIGG_SERVER_API_KEY}"
+## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" defined.
+## This ignores serverApiKey
+apiKeysSecretName: ""
+## @param extraDeploy Array of extra objects to deploy with the release
+extraDeploy: []
+
+## @section sidecar parameters
+sidecar:
+  ## @param imageTag Docker image tag for the Stigg Sidecar
+  imageTag: "latest"
+
+## @section persistentCache parameters
+persistentCache:
+  ## @param enabled Enable persistent cache (true/false)
+  enabled: false
+  ## @param deploymentResources Resource requests and limits for persistent cache service
+  deploymentResources:
+    cpu:
+      request: "1000m"
+      limit: "1500m"
+    memory:
+      request: "512Mi"
+      limit: "640Mi"
+  ## @param deploymentHPA Horizontal Pod Autoscaler configuration for persistent cache service
+  deploymentHPA:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  ## @param imageTag Docker image tag for the Stigg Persistent Cache
+  imageTag: "2.39.0"
+  redis:
+    ## @param environmentPrefix Prefix for Redis environment keys
+    environmentPrefix: ""
+    ## @param host Hostname for Redis instance
+    host: ""
+    ## @param port Redis port (default: 6379)
+    port: "6379"
+    ## @param db Redis DB identifier (default: 0)
+    db: "0"
+    ## @param username Redis username (optional)
+    username: ""
+    ## @param password Redis password (optional)
+    password: "${REDIS_PASSWORD}"
+    ## @param tls Enable TLS for Redis connection (true/false)
+    tls: true
+  ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
+  awsRegion: ""
+  ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
+  queueUrl: "${STIGG_SQS_QUEUE_URL}"

@@ -29,14 +29,14 @@
     configMapKeyRef:
       name: stigg-conf
       key: REDIS_TLS
-{{- if $vals.redisUsername }}
+{{- if $vals.persistentCache.redis.username }}
 - name: REDIS_USERNAME
   valueFrom:
     secretKeyRef:
       name: stigg-redis-auth
       key: REDIS_USERNAME
 {{- end }}
-{{- if $vals.redisPassword }}
+{{- if $vals.persistentCache.redis.password }}
 - name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:
@@ -86,13 +86,13 @@
 {{- /* A utility to add a stigg sidecar to a given deployment/pod */ -}}
 {{- define "stigg.sidecar" }}
 - name: stigg-sidecar
-  image: public.ecr.aws/stigg/sidecar:{{ .Values.stiggchart.sidecarImageTag }}
+  image: public.ecr.aws/stigg/sidecar:{{ .Values.stiggchart.sidecar.imageTag }}
   env:
 {{- include "stigg.apikeys" . | indent 4 }}
 {{- if and (eq .Values.stiggchart.serverApiKey "") (eq .Values.stiggchart.apiKeysSecretName "") }}
   {{- fail "Either serverApiKey or apiKeysSecretName must be set to run the sidecar!" }}
 {{- end }}
-{{- if eq .Values.stiggchart.persistentCaching true }}
+{{- if eq .Values.stiggchart.persistentCache.enabled true }}
 {{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}
   ports:

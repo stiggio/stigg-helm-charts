@@ -1,5 +1,5 @@
 {{- /* A required deployment for running in 'persistent-caching' mode */ -}}
-{{- if eq .Values.persistentCache true }}
+{{- if eq .Values.persistentCache.enabled true }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: persistent-cache-service
-          image: public.ecr.aws/stigg/persistent-cache-service:{{ .Values.persistentCacheImageTag }}
+          image: public.ecr.aws/stigg/persistent-cache-service:{{ .Values.persistentCache.imageTag }}
           env:
 {{- include "stigg.apikeys" . | indent 12 }}
 {{- include "stigg.redisEnv" . | indent 12 }}
@@ -25,9 +25,9 @@ spec:
             - containerPort: 8080
           resources:
             requests:
-              cpu: {{ .Values.persistentCacheResources.cpu.request | quote }}
-              memory: {{ .Values.persistentCacheResources.memory.request | quote }}
+              cpu: {{ .Values.persistentCache.deploymentResources.cpu.request | quote }}
+              memory: {{ .Values.persistentCache.deploymentResources.memory.request | quote }}
             limits:
-              cpu: {{ .Values.persistentCacheResources.cpu.limit | quote }}
-              memory: {{ .Values.persistentCacheResources.memory.limit | quote }}
+              cpu: {{ .Values.persistentCache.deploymentResources.cpu.limit | quote }}
+              memory: {{ .Values.persistentCache.deploymentResources.memory.limit | quote }}
 {{- end }}
