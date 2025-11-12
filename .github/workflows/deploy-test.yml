@@ -369,7 +369,7 @@ jobs:
 
       - name: Patch app code to reach sidecar service
         run: |
-          sed -i '' 's/localhost/stigg-sidecar/g' example-app-chart/appCode.py
+          sed -i 's/localhost/stigg-sidecar/g' example-app-chart/appCode.py
           
       - name: Deploy with Helm
         run: |
