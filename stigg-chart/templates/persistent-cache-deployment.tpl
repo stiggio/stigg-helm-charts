@@ -23,4 +23,11 @@ spec:
 {{- include "stigg.sqsEnv" . | indent 12 }}
           ports:
             - containerPort: 8080
+          resources:
+            requests:
+              cpu: {{ .Values.persistentCacheResources.cpu.request | quote }}
+              memory: {{ .Values.persistentCacheResources.memory.request | quote }}
+            limits:
+              cpu: {{ .Values.persistentCacheResources.cpu.limit | quote }}
+              memory: {{ .Values.persistentCacheResources.memory.limit | quote }}
 {{- end }}
