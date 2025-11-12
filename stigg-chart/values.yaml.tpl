@@ -18,6 +18,24 @@ sidecar:
   ## @param imageTag Docker image tag for the Stigg Sidecar
   imageTag: "latest"
 
+  ## @param standalone Run a standalone deployment of the sidecar service
+  standalone: false
+
+  ## @param deploymentResources Resource requests and limits for standalone service deployment
+  deploymentResources:
+    cpu:
+      request: "1000m"
+      limit: "1500m"
+    memory:
+      request: "512Mi"
+      limit: "640Mi"
+  ## @param deploymentHPA Horizontal Pod Autoscaler configuration for standalone service deployment
+  deploymentHPA:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
 ## @section persistentCache parameters
 persistentCache:
   ## @param enabled Enable persistent cache (true/false)
