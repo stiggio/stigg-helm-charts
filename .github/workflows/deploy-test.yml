@@ -390,6 +390,10 @@ jobs:
         run: |
           sed -i 's/localhost/stigg-sidecar/g' example-app-chart/appCode.py
           
+      - name: Patch app chart to remove sidecar container
+        run: |
+          sed -i '/stigg\.sidecar/d' example-app-chart/templates/example-app-deployment.tpl
+
       - name: Deploy with Helm
         run: |
           export NAMESPACE=helm-standalone-sidecar
