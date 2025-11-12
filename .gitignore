@@ -5,3 +5,4 @@ kustomize/generated/*
 !kustomize/generated/.gitkeep
 .idea
 example-app-chart/values.yaml
+stigg-chart/values.yaml
