@@ -3,7 +3,7 @@
 {{- /* */ -}}
 
 {{- define "stigg.redisEnv" }}
-{{- $vals := .Values.stiggchart.persistentCache.redis | default .Values.persistentCache.redis }}
+{{- $vals := .Values.stiggchart | default .Values }}
 - name: REDIS_ENVIRONMENT_PREFIX
   valueFrom:
     configMapKeyRef:
@@ -29,14 +29,14 @@
     configMapKeyRef:
       name: stigg-conf
       key: REDIS_TLS
-{{- if $vals.username }}
+{{- if $vals.persistentCache.redis.username }}
 - name: REDIS_USERNAME
   valueFrom:
     secretKeyRef:
       name: stigg-redis-auth
       key: REDIS_USERNAME
 {{- end }}
-{{- if $vals.password }}
+{{- if $vals.persistentCache.redis.password }}
 - name: REDIS_PASSWORD
   valueFrom:
     secretKeyRef:

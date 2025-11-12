@@ -1,5 +1,5 @@
 stiggchart:
-  serverApiKey: "server-d55ce816-4899-42ea-83c9-bd797c164df9:962842d4-b30a-461b-97bc-7288fa89a9ae"
+  serverApiKey: "<SERVER_API_KEY>"
   sidecar:
     imageTag: "latest"
   persistentCache: 
@@ -13,7 +13,7 @@ stiggchart:
       password: "myredispassword"
       tls: true
     awsRegion: "us-east-2"
-    queueUrl: "https://sqs.us-east-2.amazonaws.com/502947190190/production-sqs-event-queue-anton-sandbox-production"
+    queueUrl: "<SQS_QUEUE_URL>"
   extraDeploy:
     - apiVersion: v1
       kind: ConfigMap
