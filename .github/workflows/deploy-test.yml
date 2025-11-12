@@ -60,7 +60,7 @@ jobs:
           
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=240s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Port-forward app pod in helm namespace and test
@@ -176,7 +176,7 @@ jobs:
           kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/app-manifests.yaml
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=240s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Port-forward app pod in no-helm namespace and test
@@ -285,7 +285,7 @@ jobs:
           helm install -n ${NAMESPACE} example-app ./example-app-chart \
             --set stiggchart.apiKeysSecretName=custom-stigg-api-keys
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=240s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Port-forward app pod in helm-custom namespace and test
@@ -355,6 +355,7 @@ jobs:
         uses: medyagh/setup-minikube@v0.0.20
         with:
           cache: true
+          cpus: 4
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
@@ -404,7 +405,7 @@ jobs:
           
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
-          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=240s
+          kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
 
       - name: Port-forward app pod in helm namespace and test
