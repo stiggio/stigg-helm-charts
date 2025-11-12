@@ -6,10 +6,10 @@ metadata:
     app: stigg
     chart: {{ .Chart.Name }}
 data:
-  REDIS_ENVIRONMENT_PREFIX: {{ .Values.redisEnvironmentPrefix | quote }}
-  REDIS_HOST: {{ .Values.redisHost | quote }}
-  REDIS_PORT: {{ .Values.redisPort | quote }}
-  REDIS_DB: {{ .Values.redisDb | quote }}
-  REDIS_TLS: {{ .Values.redisTls | quote }}
-  AWS_REGION: {{ .Values.awsRegion | quote }}
-  QUEUE_URL: {{ .Values.queueUrl | quote }}
+  REDIS_ENVIRONMENT_PREFIX: {{ .Values.persistentCache.redis.environmentPrefix | quote }}
+  REDIS_HOST: {{ .Values.persistentCache.redis.host | quote }}
+  REDIS_PORT: {{ .Values.persistentCache.redis.port | quote }}
+  REDIS_DB: {{ .Values.persistentCache.redis.db | quote }}
+  REDIS_TLS: {{ .Values.persistentCache.redis.tls | quote }}
+  AWS_REGION: {{ .Values.persistentCache.awsRegion | quote }}
+  QUEUE_URL: {{ .Values.persistentCache.queueUrl | quote }}

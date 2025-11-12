@@ -1,16 +1,19 @@
 stiggchart:
   serverApiKey: "server-d55ce816-4899-42ea-83c9-bd797c164df9:962842d4-b30a-461b-97bc-7288fa89a9ae"
-  sidecarImageTag: "latest"
-  persistentCache: true
-  redisEnvironmentPrefix: "production"
-  redisHost: "redis"
-  redisPort: "6379"
-  redisDb: "0"
-  redisUsername: "default"
-  redisPassword: "myredispassword"
-  redisTls: true
-  awsRegion: "us-east-2"
-  queueUrl: "https://sqs.us-east-2.amazonaws.com/502947190190/production-sqs-event-queue-anton-sandbox-production"
+  sidecar:
+    imageTag: "latest"
+  persistentCache: 
+    enabled: true
+    redis:
+      environmentPrefix: "production"
+      host: "redis"
+      port: "6379"
+      db: "0"
+      username: "default"
+      password: "myredispassword"
+      tls: true
+    awsRegion: "us-east-2"
+    queueUrl: "https://sqs.us-east-2.amazonaws.com/502947190190/production-sqs-event-queue-anton-sandbox-production"
   extraDeploy:
     - apiVersion: v1
       kind: ConfigMap

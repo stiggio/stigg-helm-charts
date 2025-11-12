@@ -1,5 +1,5 @@
-{{- /* HPA for persistent-cache-service, enabled automatically when persistentCache is true */ -}}
-{{- if eq .Values.persistentCache true }}
+{{- /* HPA for persistent-cache-service, enabled automatically when persistentCache is enabled */ -}}
+{{- if eq .Values.persistentCache.enabled true }}
 {{- if .Capabilities.APIVersions.Has "autoscaling/v2" -}}
 apiVersion: autoscaling/v2
 {{- else -}}
@@ -17,19 +17,19 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: stigg-persistent-cache
-  minReplicas: {{ .Values.persistentCacheHpa.minReplicas }}
-  maxReplicas: {{ .Values.persistentCacheHpa.maxReplicas }}
+  minReplicas: {{ .Values.persistentCache.deploymentHPA.minReplicas }}
+  maxReplicas: {{ .Values.persistentCache.deploymentHPA.maxReplicas }}
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.persistentCacheHpa.targetCPUUtilizationPercentage }}
+          averageUtilization: {{ .Values.persistentCache.deploymentHPA.targetCPUUtilizationPercentage }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.persistentCacheHpa.targetMemoryUtilizationPercentage }}
+          averageUtilization: {{ .Values.persistentCache.deploymentHPA.targetMemoryUtilizationPercentage }}
 {{- end }}

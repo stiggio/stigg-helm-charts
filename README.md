@@ -95,13 +95,13 @@ After deployment, you should see pods for your app, the sidecar, the persistent 
 This section provides a step-by-step tutorial for deploying the example app with Stigg charts:
 
 1. **Update the example app values:**
-   Edit the `example-app-chart/values.yaml` file to set your Stigg API keys, Redis host, and any other configuration values required for your environment. The `awsRegion` and `queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS. 
+   Edit the `example-app-chart/values.yaml` file to set your Stigg API keys, Redis host, and any other configuration values required for your environment. The `persistentCache.awsRegion` and `persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS. 
 
-   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `redisHost` to point to your external Redis instance.
+   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `persistentCache.redis.host` to point to your external Redis instance.
 
-   > **⚠️ Important:** When using persistent cache (`persistentCache: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
+   > **⚠️ Important:** When using persistent cache (`persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
 
-   If you do not want to use persistent cache, you can disable it by setting `persistentCache: false` in the values file.
+   If you do not want to use persistent cache, you can disable it by setting `persistentCache.enabled: false` in the values file.
 
    First, we'll create a namespace to provision resources:
    ```sh
@@ -126,16 +126,18 @@ This section provides a step-by-step tutorial for deploying the example app with
    Then update `example-app-chart/values.yaml` to configure Redis TLS and authentication:
    ```yaml
    stiggchart:
-     persistentCache: true            # Enable persistent cache
-     redisHost: "redis"
-     redisPort: "6379"
-     redisDb: "0"
-     redisUsername: "default"          # Redis username (optional)
-     redisPassword: "your-password"    # Redis password (REQUIRED when persistentCache is true)
-     redisTls: true                     # Enable TLS (REQUIRED when persistentCache is true)
+     persistentCache: 
+      enabled: true                 # Enable persistent cache
+     redis:
+      host: "redis"
+      port: "6379"
+      db: "0"
+      username: "default"           # Redis username (optional)
+      password: "your-password"     # Redis password (REQUIRED when persistentCache is true)
+      tls: true                     # Enable TLS (REQUIRED when persistentCache is true)
    ```
    
-   > **⚠️ Important:** When `persistentCache: true`, both `redisTls: true` and `redisPassword` are **mandatory**. Redis is assumed to run with TLS and authentication for security.
+   > **⚠️ Important:** When `persistentCache.enabled: true`, both `persistentCache.redis.tls: true` and `persistentCache.redis.password` are **mandatory**. Redis is assumed to run with TLS and authentication for security.
    
    > **⚠️ Note:** For production deployments, use properly signed certificates from a trusted Certificate Authority (CA) instead of self-signed certificates.
 
@@ -179,16 +181,16 @@ To use the Helm chart in production:
 - Review and customize the `values.yaml` file to fit your environment (e.g., API keys, image tags, resource limits).
 - **Enable Redis TLS and authentication** for secure communication:
   - Generate proper TLS certificates from a trusted CA (not self-signed)
-  - Set `redisTls: true` and configure `redisUsername` and `redisPassword`
+  - Set `persistentCache.redis.tls: true` and configure `persistentCache.redis.username` and `persistentCache.redis.password`
   - Available Redis configuration parameters:
-    - `redisHost`: Redis server hostname
-    - `redisPort`: Redis server port (default: "6379")
-    - `redisDb`: Redis database number (default: "0")
-    - `redisUsername`: Redis username (optional)
-    - `redisPassword`: Redis password (recommended)
-    - `redisTls`: Enable TLS encryption (recommended: true)
+    - `persistentCache.redis.host`: Redis server hostname
+    - `persistentCache.redis.port`: Redis server port (default: "6379")
+    - `persistentCache.redis.db`: Redis database number (default: "0")
+    - `persistentCache.redis.username`: Redis username (optional)
+    - `persistentCache.redis.password`: Redis password (recommended)
+    - `persistentCache.redis.tls`: Enable TLS encryption (recommended: true)
 - **Configure resource limits and autoscaling for persistent cache**:
-  - The persistent cache service automatically includes resource requests/limits and Horizontal Pod Autoscaler (HPA) when `persistentCache: true`
+  - The persistent cache service automatically includes resource requests/limits and Horizontal Pod Autoscaler (HPA) when `persistentCache.enabled: true`
   - Default configuration (based on internal benchmarks):
     - CPU: 1 vCPU (1000m) request and limit
     - Memory: 512Mi request, 640Mi limit
@@ -197,18 +199,19 @@ To use the Helm chart in production:
     - Memory target: 80% utilization
   - Customize resource allocation in `values.yaml`:
     ```yaml
-    persistentCacheResources:
-      cpu:
-        request: "1000m"
-        limit: "1500m"
-      memory:
-        request: "512Mi"
-        limit: "640Mi"
-    persistentCacheHpa:
-      minReplicas: 1
-      maxReplicas: 10
-      targetCPUUtilizationPercentage: 70
-      targetMemoryUtilizationPercentage: 80
+    persistentCache:
+      deploymentResources:
+        cpu:
+          request: "1000m"
+          limit: "1500m"
+        memory:
+          request: "512Mi"
+          limit: "640Mi"
+      deploymentHPA:
+        minReplicas: 1
+        maxReplicas: 10
+        targetCPUUtilizationPercentage: 70
+        targetMemoryUtilizationPercentage: 80
     ```
   - Benchmarks: A single instance handles ~100 messages/sec with CPU averaging 60% (range 30-90%) under constant load and ~250MB memory footprint
   - The service is stateless and horizontally scalable for higher throughput demands

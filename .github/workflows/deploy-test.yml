@@ -40,12 +40,12 @@ jobs:
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
@@ -149,11 +149,11 @@ jobs:
         run: |
           sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
           sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
-          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" stigg-chart/values.yaml
-          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
-          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" stigg-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" stigg-chart/values.yaml
-          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" stigg-chart/values.yaml
+          sed -i "s|^\\( *enabled: *\\).*|\\1true|" stigg-chart/values.yaml
+          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
+          sed -i "s|^\\( *host: *\\).*|\\1redis|" stigg-chart/values.yaml
+          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" stigg-chart/values.yaml
+          sed -i "s|^\\( *tls: *\\).*|\\1true|" stigg-chart/values.yaml
           sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
@@ -255,11 +255,11 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *persistentCache: *\\).*|\\1true|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisEnvironmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisHost: *\\).*|\\1redis|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisPassword: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *redisTls: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
+          sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
+          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
+          sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm (custom secret)
         run: |
