@@ -39,6 +39,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
+          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
@@ -251,6 +252,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
+          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
