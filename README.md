@@ -95,13 +95,13 @@ After deployment, you should see pods for your app, the sidecar, the persistent 
 This section provides a step-by-step tutorial for deploying the example app with Stigg charts:
 
 1. **Update the example app values:**
-   Edit the `example-app-chart/values.yaml` file to set your Stigg API keys, Redis host, and any other configuration values required for your environment. The `persistentCache.awsRegion` and `persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS. 
+   Edit the `example-app-chart/values.yaml` file to set your sidecar and persistentCache configuration values required for your environment. The `stiggchart.persistentCache.awsRegion` and `stiggchart.persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS.
 
-   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `persistentCache.redis.host` to point to your external Redis instance.
+   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `stiggchart.persistentCache.redis.host` to point to your external Redis instance.
 
-   > **⚠️ Important:** When using persistent cache (`persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
+   > **⚠️ Important:** When using persistent cache (`stiggchart.persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
 
-   If you do not want to use persistent cache, you can disable it by setting `persistentCache.enabled: false` in the values file.
+   If you do not want to use persistent cache, you can disable it by setting `stiggchart.persistentCache.enabled: false` in the values file.
 
    First, we'll create a namespace to provision resources:
    ```sh
@@ -149,6 +149,11 @@ This section provides a step-by-step tutorial for deploying the example app with
 4. **Deploy the app and dependencies:**
    Use Helm to install the example app chart (which now includes the stigg sub-chart):
    ```sh
+   export STIGG_SERVER_API_KEY="<STIGG_SERVER_API_KEY>"
+   export REDIS_PASSWORD="<REDIS_PASSWORD>"
+   export STIGG_SQS_QUEUE_URL="<STIGG_SQS_QUEUE_URL>"
+
+   envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
    helm install -n ${NAMESPACE} example-app ./example-app-chart
    ```
 

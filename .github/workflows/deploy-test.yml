@@ -32,22 +32,18 @@ jobs:
           openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
           cp redis-tls.crt redis-ca.crt
 
-      - name: Patch values.yaml files with secrets
-        env:
-          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
-          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      - name: Patch values.yaml files
         run: |
-          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
-          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
-          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm
+        env:
+          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
+          STIGG_SQS_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           export NAMESPACE=helm
           kubectl create ns ${NAMESPACE}
@@ -59,6 +55,8 @@ jobs:
             --from-file=ca.crt=redis-ca.crt
           
           cp -r stigg-chart example-app-chart/charts
+
+          envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
           kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
@@ -141,18 +139,11 @@ jobs:
           openssl req -x509 -newkey rsa:2048 -keyout redis-tls.key -out redis-tls.crt -days 365 -nodes -subj "/CN=redis"
           cp redis-tls.crt redis-ca.crt
 
-      - name: Patch values.yaml files with secrets
-        env:
-          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
-          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      - name: Patch values.yaml files
         run: |
-          sed -i "s|^\\( *serverApiKey: *\\).*|\\1\"${STIGG_SERVER_API_KEY}\"|" stigg-chart/values.yaml
-          sed -i "s|^\\( *queueUrl: *\\).*|\\1\"${STIGG_QUEUE_URL}\"|" stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" stigg-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" stigg-chart/values.yaml
-          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" stigg-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" stigg-chart/values.yaml
           sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" stigg-chart/values.yaml
 
@@ -249,19 +240,17 @@ jobs:
             --from-literal=stigg_server_api_key=${{ secrets.STIGG_SERVER_API_KEY }} \
             -n ${NAMESPACE}
 
-      - name: Patch values.yaml files with secrets
-        env:
-          STIGG_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      - name: Patch values.yaml files
         run: |
-          sed -i "s|^\( *queueUrl: *\).*|\1\"${STIGG_QUEUE_URL}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
-          sed -i "s|^\\( *password: *\\).*|\\1\"${REDIS_PASSWORD}\"|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
 
       - name: Deploy with Helm (custom secret)
+        env:
+          STIGG_SQS_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           export NAMESPACE=helm-custom
           
@@ -272,6 +261,7 @@ jobs:
             --from-file=ca.crt=redis-ca.crt
           
           cp -r stigg-chart example-app-chart/charts
+          envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
           helm install -n ${NAMESPACE} example-app ./example-app-chart \
             --set stiggchart.apiKeysSecretName=custom-stigg-api-keys
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."

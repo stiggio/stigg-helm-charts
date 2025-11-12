@@ -1,5 +1,5 @@
 stiggchart:
-  serverApiKey: "<SERVER_API_KEY>"
+  serverApiKey: "${STIGG_SERVER_API_KEY}"
   sidecar:
     imageTag: "latest"
   persistentCache: 
@@ -10,10 +10,10 @@ stiggchart:
       port: "6379"
       db: "0"
       username: "default"
-      password: "myredispassword"
+      password: "${REDIS_PASSWORD}"
       tls: true
     awsRegion: "us-east-2"
-    queueUrl: "<SQS_QUEUE_URL>"
+    queueUrl: "${STIGG_SQS_QUEUE_URL}"
   extraDeploy:
     - apiVersion: v1
       kind: ConfigMap
