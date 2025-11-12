@@ -355,7 +355,6 @@ jobs:
         uses: medyagh/setup-minikube@v0.0.20
         with:
           cache: true
-          cpus: 4
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
@@ -385,6 +384,7 @@ jobs:
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *standalone: *\\).*|\\1true|" example-app-chart/values.yaml
+          sed -i 's/1000m/500m/g' stigg-chart/values.yaml 
 
       - name: Patch app code to reach sidecar service
         run: |
