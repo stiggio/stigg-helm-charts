@@ -2,7 +2,7 @@
 {{- /* */ -}}
 {{- /* */ -}}
 
-{{- define "stigg.persistentCache.redis" }}
+{{- define "stigg.redisEnv" }}
 {{- $vals := .Values.stiggchart | default .Values }}
 - name: REDIS_ENVIRONMENT_PREFIX
   valueFrom:
