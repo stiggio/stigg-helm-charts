@@ -140,7 +140,12 @@ jobs:
           cp redis-tls.crt redis-ca.crt
 
       - name: Patch values.yaml files
+        env:
+          STIGG_SERVER_API_KEY: ${{ secrets.STIGG_SERVER_API_KEY }}
+          STIGG_SQS_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
+          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" stigg-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" stigg-chart/values.yaml

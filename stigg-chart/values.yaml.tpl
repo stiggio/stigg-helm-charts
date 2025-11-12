@@ -6,7 +6,7 @@
 #   serverApiKey: "your-server-api-key"
 
 ## @param serverApiKey Stigg server API key to store in a new created secret
-serverApiKey: "<SERVER_API_KEY>"
+serverApiKey: "${STIGG_SERVER_API_KEY}"
 ## @param apiKeysSecretName Use an existing secret with keys "stigg_server_api_key" defined.
 ## This ignores serverApiKey
 apiKeysSecretName: ""
@@ -50,10 +50,10 @@ persistentCache:
     ## @param username Redis username (optional)
     username: ""
     ## @param password Redis password (optional)
-    password: "testpassword"
+    password: "${REDIS_PASSWORD}"
     ## @param tls Enable TLS for Redis connection (true/false)
     tls: true
   ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
   awsRegion: ""
   ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
-  queueUrl: "<QUEUE_URL>"
+  queueUrl: "${STIGG_SQS_QUEUE_URL}"

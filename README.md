@@ -230,9 +230,14 @@ To use the Helm chart in production:
 ## Using Kubectl
 
 If you do not want to use Helm directly, you can render the Kubernetes manifests using `helm template` and `kubectl kustomize` commands and apply them with `kubectl`.
-1. First, edit the values in `./stigg-chart/values.yaml` to match your setup (api key, persistent cache, etc.). 
+1. First, edit the values in `./stigg-chart/values.yaml` to match your setup (sidecar and persistentCache configuration). 
 2. Generate the Stigg components manifests:
     ```sh
+    export STIGG_SERVER_API_KEY="<STIGG_SERVER_API_KEY>"
+    export REDIS_PASSWORD="<REDIS_PASSWORD>"
+    export STIGG_SQS_QUEUE_URL="<STIGG_SQS_QUEUE_URL>"
+
+    envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
     helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
     ```
     Manifests should include an api-keys secret. If persistent cache is enabled, a delpoyment resource will be added as well.
