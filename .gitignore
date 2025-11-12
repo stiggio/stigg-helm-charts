@@ -4,3 +4,4 @@ example-app-chart/charts/*
 kustomize/generated/*
 !kustomize/generated/.gitkeep
 .idea
+example-app-chart/values.yaml
