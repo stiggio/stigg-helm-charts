@@ -24,7 +24,7 @@ spec:
             - -c
             - |
               pip install --upgrade pip && \
-              pip install stigg-sidecar-sdk==3.101.0 pydantic-core==2.16.1 && \
+              pip install stigg-sidecar-sdk==5.109.3 pydantic-core==2.16.1 && \
               python -u /app/app.py
           ports:
             - containerPort: 9090
