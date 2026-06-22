@@ -21,6 +21,10 @@ sidecar:
   ## @param standalone Run a standalone deployment of the sidecar service
   standalone: false
 
+  ## @param extraEnv Extra environment variables passed verbatim to the
+  ## sidecar container.
+  extraEnv: {}
+
   ## @param deploymentResources Resource requests and limits for standalone service deployment
   deploymentResources:
     cpu:
@@ -56,6 +60,9 @@ persistentCache:
     targetMemoryUtilizationPercentage: 80
   ## @param imageTag Docker image tag for the Stigg Persistent Cache
   imageTag: "2.39.0"
+  ## @param extraEnv Extra environment variables passed verbatim to the
+  ## persistent-cache container.
+  extraEnv: {}
   redis:
     ## @param environmentPrefix Prefix for Redis environment keys
     environmentPrefix: ""
