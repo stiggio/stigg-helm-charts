@@ -96,6 +96,13 @@
 {{- if eq $vals.persistentCache.enabled true }}
 {{- include "stigg.redisEnv" . | indent 4 }}
 {{ end }}
+{{- $reserved := list "SERVER_API_KEY" "REDIS_ENVIRONMENT_PREFIX" "REDIS_HOST" "REDIS_PORT" "REDIS_DB" "REDIS_TLS" "REDIS_USERNAME" "REDIS_PASSWORD" }}
+{{- range $k, $v := $vals.sidecar.extraEnv }}
+{{- if and (not (has $k $reserved)) (ne (toString $v) "") }}
+    - name: {{ $k }}
+      value: {{ $v | quote }}
+{{- end }}
+{{- end }}
   ports:
   - containerPort: 80
 {{- end }}

@@ -246,6 +246,19 @@ To use the Helm chart in production:
     ```
   - The service is stateless and horizontally scalable for higher throughput demands
   - **Important**: Ensure `metrics-server` is installed in your cluster for HPA to function properly
+- **Override environment variables on the sidecar and persistent cache containers**:
+  - Both components read their configuration from environment variables. Pass extras via `sidecar.extraEnv` and `persistentCache.extraEnv` as plain `name: value` maps; they're injected verbatim onto the container.
+    ```yaml
+    stiggchart:
+      sidecar:
+        extraEnv:
+          LOG_LEVEL: debug
+      persistentCache:
+        extraEnv:
+          CACHE_UPDATE_POLICY: UPSERT
+          CACHE_LOCK_RETRY_COUNT: "240"   # quote numerics
+    ```
+  - Chart-managed keys (`SERVER_API_KEY`, `REDIS_*`, `AWS_REGION`, `QUEUE_URL`) can't be shadowed via `extraEnv` — the chart silently ignores them so it stays the single source of truth for the connection wiring.
 - Update your Charts to utilize `stigg-chart` as a sub-chart of your app, or alternatively deploy the Stigg as a standalone chart. Either way, additional changes might be necessary to fit your specific deployment setup. 
 - Monitor your deployments and use Kubernetes best practices for scaling, security, and reliability.
 - Refer to [Helm best practices](https://helm.sh/docs/chart_best_practices/) for production deployments.

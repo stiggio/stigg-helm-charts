@@ -44,24 +44,49 @@ jobs:
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
+          # Override extraEnv
+          sed -i "/^sidecar:/,/^persistentCache:/ s|extraEnv: {}|extraEnv: { LOG_LEVEL: debug }|" stigg-chart/values.yaml
+          sed -i "/^persistentCache:/,\$ s|extraEnv: {}|extraEnv: { CACHE_UPDATE_POLICY: UPSERT }|" stigg-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
           export NAMESPACE=helm
           kubectl create ns ${NAMESPACE}
-          
+
           # Create Redis TLS secret
           kubectl create secret generic redis-tls-certs -n ${NAMESPACE} \
             --from-file=tls.crt=redis-tls.crt \
             --from-file=tls.key=redis-tls.key \
             --from-file=ca.crt=redis-ca.crt
-          
+
           cp -r stigg-chart example-app-chart/charts
-          
+
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
           kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}
+
+      - name: Verify extraEnv overrides reach the containers
+        run: |
+          export NAMESPACE=helm
+
+          # persistent cache — its own deployment, single container
+          POLICY=$(kubectl get deploy stigg-persistent-cache -n ${NAMESPACE} \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="CACHE_UPDATE_POLICY")].value}')
+          echo "CACHE_UPDATE_POLICY on stigg-persistent-cache = '$POLICY'"
+          if [ "$POLICY" != "UPSERT" ]; then
+            echo "expected UPSERT, got '$POLICY' — persistentCache.extraEnv override didn't propagate"
+            exit 1
+          fi
+
+          APP_DEPLOY=$(kubectl get deploy -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          LOG_LEVEL=$(kubectl get deploy "$APP_DEPLOY" -n ${NAMESPACE} \
+            -o jsonpath='{.spec.template.spec.containers[?(@.name=="stigg-sidecar")].env[?(@.name=="LOG_LEVEL")].value}')
+          echo "LOG_LEVEL on stigg-sidecar container (${APP_DEPLOY}) = '$LOG_LEVEL'"
+          if [ "$LOG_LEVEL" != "debug" ]; then
+            echo "expected debug, got '$LOG_LEVEL' — sidecar.extraEnv override didn't propagate"
+            exit 1
+          fi
 
       - name: Port-forward app pod in helm namespace and test
         run: |

@@ -21,6 +21,13 @@ spec:
 {{- include "stigg.apikeys" . | indent 12 }}
 {{- include "stigg.redisEnv" . | indent 12 }}
 {{- include "stigg.sqsEnv" . | indent 12 }}
+{{- $reserved := list "SERVER_API_KEY" "REDIS_ENVIRONMENT_PREFIX" "REDIS_HOST" "REDIS_PORT" "REDIS_DB" "REDIS_TLS" "REDIS_USERNAME" "REDIS_PASSWORD" "AWS_REGION" "QUEUE_URL" }}
+{{- range $k, $v := .Values.persistentCache.extraEnv }}
+{{- if and (not (has $k $reserved)) (ne (toString $v) "") }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+{{- end }}
+{{- end }}
           ports:
             - containerPort: 8080
           resources:
