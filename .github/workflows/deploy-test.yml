@@ -79,9 +79,10 @@ jobs:
             exit 1
           fi
 
-          LOG_LEVEL=$(kubectl get deploy example-app -n ${NAMESPACE} \
+          APP_DEPLOY=$(kubectl get deploy -n ${NAMESPACE} -l app=app -o jsonpath='{.items[0].metadata.name}')
+          LOG_LEVEL=$(kubectl get deploy "$APP_DEPLOY" -n ${NAMESPACE} \
             -o jsonpath='{.spec.template.spec.containers[?(@.name=="stigg-sidecar")].env[?(@.name=="LOG_LEVEL")].value}')
-          echo "LOG_LEVEL on stigg-sidecar container = '$LOG_LEVEL'"
+          echo "LOG_LEVEL on stigg-sidecar container (${APP_DEPLOY}) = '$LOG_LEVEL'"
           if [ "$LOG_LEVEL" != "debug" ]; then
             echo "expected debug, got '$LOG_LEVEL' — sidecar.extraEnv override didn't propagate"
             exit 1
