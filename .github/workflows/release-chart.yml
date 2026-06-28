@@ -1,9 +1,15 @@
 name: Release stigg-chart
 
-# Packages the stigg-chart Helm chart, publishes it as a GitHub Release,
-# and updates the Helm repository index on the gh-pages branch using the
-# official helm/chart-releaser-action. Artifact Hub scrapes that gh-pages
-# Helm repo (see artifacthub-repo.yml) and surfaces each released version.
+# Packages the stigg-chart Helm chart, publishes it as a GitHub Release, and
+# updates the Helm repository index on the gh-pages branch. Artifact Hub
+# scrapes that gh-pages Helm repo (see artifacthub-repo.yml) and surfaces each
+# released version.
+#
+# chart-releaser (cr) is installed via the official helm/chart-releaser-action,
+# but the release is driven by the cr CLI directly: the all-in-one action
+# releases every chart under its charts_dir, and this repo also contains the
+# example-app-chart demo, which must NOT be published. Driving cr ourselves
+# lets us scope the release to stigg-chart only without relocating the chart.
 
 on:
   push:
@@ -15,6 +21,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  CHART_DIR: stigg-chart
 
 jobs:
   release:
@@ -33,26 +42,65 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-      # chart-releaser releases every chart found under charts_dir. Stage only
-      # stigg-chart into a clean directory so the example-app-chart demo is
-      # never published to Artifact Hub.
-      - name: Stage stigg-chart for release
-        run: |
-          rm -rf .charts-to-release
-          mkdir -p .charts-to-release
-          cp -r stigg-chart .charts-to-release/stigg-chart
-
-      - name: Run chart-releaser
+      - name: Install chart-releaser (cr)
         uses: helm/chart-releaser-action@v1.6.0
         with:
-          charts_dir: .charts-to-release
-          skip_existing: true
+          install_only: true
+
+      # cr index --push requires the gh-pages branch to already exist. Bootstrap
+      # it (as an orphan branch carrying artifacthub-repo.yml) on the first run.
+      - name: Ensure gh-pages branch exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            echo "gh-pages branch already exists"
+          else
+            echo "Creating gh-pages branch..."
+            tmp="$(mktemp -d)"
+            cd "$tmp"
+            git init -q
+            git checkout -q -b gh-pages
+            cp "$GITHUB_WORKSPACE/artifacthub-repo.yml" .
+            git add artifacthub-repo.yml
+            git -c user.name="$GITHUB_ACTOR" \
+                -c user.email="$GITHUB_ACTOR@users.noreply.github.com" \
+                commit -q -m "chore: initialize gh-pages"
+            git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          fi
+
+      - name: Package chart
+        run: |
+          rm -rf .cr-release-packages .cr-index
+          mkdir -p .cr-release-packages .cr-index
+          helm package "${CHART_DIR}" --destination .cr-release-packages
+
+      - name: Publish chart as a GitHub Release
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cr upload \
+            --owner "${GITHUB_REPOSITORY%/*}" \
+            --git-repo "${GITHUB_REPOSITORY#*/}" \
+            --skip-existing \
+            --token "${CR_TOKEN}"
 
-      # The action only writes packaged charts + index.yaml to gh-pages, so
-      # publish the Artifact Hub repo metadata alongside the index.
-      - name: Publish artifacthub-repo.yml to gh-pages
+      - name: Update Helm repo index on gh-pages
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cr index \
+            --owner "${GITHUB_REPOSITORY%/*}" \
+            --git-repo "${GITHUB_REPOSITORY#*/}" \
+            --charts-repo "https://${GITHUB_REPOSITORY%/*}.github.io/${GITHUB_REPOSITORY#*/}" \
+            --index-path .cr-index/index.yaml \
+            --pages-branch gh-pages \
+            --push \
+            --token "${CR_TOKEN}"
+
+      # Keep artifacthub-repo.yml in sync on gh-pages (e.g. after the
+      # repositoryID is filled in) in case the branch already existed.
+      - name: Sync artifacthub-repo.yml to gh-pages
         run: |
           git fetch origin gh-pages
           git worktree add .gh-pages-wt gh-pages
@@ -62,6 +110,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "artifacthub-repo.yml already up to date"
           else
-            git commit -m "chore: publish artifacthub-repo.yml"
+            git commit -m "chore: sync artifacthub-repo.yml"
             git push origin gh-pages
           fi
