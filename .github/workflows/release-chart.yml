@@ -1,0 +1,76 @@
+name: Release stigg-chart
+
+# Packages the stigg-chart Helm chart, publishes it as a GitHub Release,
+# and updates the Helm repository index on the gh-pages branch.
+# Artifact Hub scrapes that gh-pages Helm repo (see artifacthub-repo.yml)
+# and surfaces each released version automatically.
+
+on:
+  push:
+    branches: [master]
+    # Only release when the chart's version metadata changes.
+    paths:
+      - 'stigg-chart/Chart.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CHART_DIR: stigg-chart
+  CR_VERSION: "1.6.1"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Install chart-releaser (cr)
+        run: |
+          curl -sSLo cr.tar.gz "https://github.com/helm/chart-releaser/releases/download/v${CR_VERSION}/chart-releaser_${CR_VERSION}_linux_amd64.tar.gz"
+          tar -xzf cr.tar.gz cr
+          sudo mv cr /usr/local/bin/cr
+          rm cr.tar.gz
+
+      - name: Package chart
+        run: |
+          rm -rf .cr-release-packages .cr-index
+          mkdir -p .cr-release-packages .cr-index
+          helm package "${CHART_DIR}" --destination .cr-release-packages
+
+      - name: Publish chart as a GitHub Release
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cr upload \
+            --owner "${GITHUB_REPOSITORY%/*}" \
+            --git-repo "${GITHUB_REPOSITORY#*/}" \
+            --skip-existing \
+            --token "${CR_TOKEN}"
+
+      - name: Update Helm repo index on gh-pages
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cr index \
+            --owner "${GITHUB_REPOSITORY%/*}" \
+            --git-repo "${GITHUB_REPOSITORY#*/}" \
+            --charts-repo "https://${GITHUB_REPOSITORY%/*}.github.io/${GITHUB_REPOSITORY#*/}" \
+            --index-path .cr-index/index.yaml \
+            --pages-branch gh-pages \
+            --push \
+            --token "${CR_TOKEN}"
