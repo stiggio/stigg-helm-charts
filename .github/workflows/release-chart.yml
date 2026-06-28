@@ -1,9 +1,9 @@
 name: Release stigg-chart
 
 # Packages the stigg-chart Helm chart, publishes it as a GitHub Release,
-# and updates the Helm repository index on the gh-pages branch.
-# Artifact Hub scrapes that gh-pages Helm repo (see artifacthub-repo.yml)
-# and surfaces each released version automatically.
+# and updates the Helm repository index on the gh-pages branch using the
+# official helm/chart-releaser-action. Artifact Hub scrapes that gh-pages
+# Helm repo (see artifacthub-repo.yml) and surfaces each released version.
 
 on:
   push:
@@ -15,10 +15,6 @@ on:
 
 permissions:
   contents: write
-
-env:
-  CHART_DIR: stigg-chart
-  CR_VERSION: "1.6.1"
 
 jobs:
   release:
@@ -36,41 +32,36 @@ jobs:
 
       - name: Install Helm
         uses: azure/setup-helm@v4
+
+      # chart-releaser releases every chart found under charts_dir. Stage only
+      # stigg-chart into a clean directory so the example-app-chart demo is
+      # never published to Artifact Hub.
+      - name: Stage stigg-chart for release
+        run: |
+          rm -rf .charts-to-release
+          mkdir -p .charts-to-release
+          cp -r stigg-chart .charts-to-release/stigg-chart
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
         with:
-          version: 'latest'
-
-      - name: Install chart-releaser (cr)
-        run: |
-          curl -sSLo cr.tar.gz "https://github.com/helm/chart-releaser/releases/download/v${CR_VERSION}/chart-releaser_${CR_VERSION}_linux_amd64.tar.gz"
-          tar -xzf cr.tar.gz cr
-          sudo mv cr /usr/local/bin/cr
-          rm cr.tar.gz
-
-      - name: Package chart
-        run: |
-          rm -rf .cr-release-packages .cr-index
-          mkdir -p .cr-release-packages .cr-index
-          helm package "${CHART_DIR}" --destination .cr-release-packages
-
-      - name: Publish chart as a GitHub Release
+          charts_dir: .charts-to-release
+          skip_existing: true
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cr upload \
-            --owner "${GITHUB_REPOSITORY%/*}" \
-            --git-repo "${GITHUB_REPOSITORY#*/}" \
-            --skip-existing \
-            --token "${CR_TOKEN}"
 
-      - name: Update Helm repo index on gh-pages
-        env:
-          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # The action only writes packaged charts + index.yaml to gh-pages, so
+      # publish the Artifact Hub repo metadata alongside the index.
+      - name: Publish artifacthub-repo.yml to gh-pages
         run: |
-          cr index \
-            --owner "${GITHUB_REPOSITORY%/*}" \
-            --git-repo "${GITHUB_REPOSITORY#*/}" \
-            --charts-repo "https://${GITHUB_REPOSITORY%/*}.github.io/${GITHUB_REPOSITORY#*/}" \
-            --index-path .cr-index/index.yaml \
-            --pages-branch gh-pages \
-            --push \
-            --token "${CR_TOKEN}"
+          git fetch origin gh-pages
+          git worktree add .gh-pages-wt gh-pages
+          cp artifacthub-repo.yml .gh-pages-wt/artifacthub-repo.yml
+          cd .gh-pages-wt
+          git add artifacthub-repo.yml
+          if git diff --cached --quiet; then
+            echo "artifacthub-repo.yml already up to date"
+          else
+            git commit -m "chore: publish artifacthub-repo.yml"
+            git push origin gh-pages
+          fi
