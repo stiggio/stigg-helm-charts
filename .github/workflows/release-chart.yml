@@ -1,29 +1,23 @@
 name: Release stigg-chart
 
 # Packages the stigg-chart Helm chart, publishes it as a GitHub Release, and
-# updates the Helm repository index on the gh-pages branch. Artifact Hub
-# scrapes that gh-pages Helm repo (see artifacthub-repo.yml) and surfaces each
-# released version.
+# updates the Helm repository index on the gh-pages branch via the official
+# helm/chart-releaser-action. Artifact Hub scrapes that gh-pages Helm repo
+# (see artifacthub-repo.yml) and surfaces each released version.
 #
-# chart-releaser (cr) is installed via the official helm/chart-releaser-action,
-# but the release is driven by the cr CLI directly: the all-in-one action
-# releases every chart under its charts_dir, and this repo also contains the
-# example-app-chart demo, which must NOT be published. Driving cr ourselves
-# lets us scope the release to stigg-chart only without relocating the chart.
+# The chart lives under charts/ so it is the only chart the action releases
+# (the example-app-chart demo lives at the repo root and must not be published).
 
 on:
   push:
     branches: [master]
     # Only release when the chart's version metadata changes.
     paths:
-      - 'stigg-chart/Chart.yaml'
+      - 'charts/stigg-chart/Chart.yaml'
   workflow_dispatch:
 
 permissions:
   contents: write
-
-env:
-  CHART_DIR: stigg-chart
 
 jobs:
   release:
@@ -42,13 +36,9 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
 
-      - name: Install chart-releaser (cr)
-        uses: helm/chart-releaser-action@v1.6.0
-        with:
-          install_only: true
-
-      # cr index --push requires the gh-pages branch to already exist. Bootstrap
-      # it (as an orphan branch carrying artifacthub-repo.yml) on the first run.
+      # chart-releaser-action requires the gh-pages branch to already exist.
+      # Bootstrap it (as an orphan branch carrying artifacthub-repo.yml) on the
+      # first run.
       - name: Ensure gh-pages branch exists
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,34 +59,13 @@ jobs:
             git push -q "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
           fi
 
-      - name: Package chart
-        run: |
-          rm -rf .cr-release-packages .cr-index
-          mkdir -p .cr-release-packages .cr-index
-          helm package "${CHART_DIR}" --destination .cr-release-packages
-
-      - name: Publish chart as a GitHub Release
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          charts_dir: charts
+          skip_existing: true
         env:
           CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cr upload \
-            --owner "${GITHUB_REPOSITORY%/*}" \
-            --git-repo "${GITHUB_REPOSITORY#*/}" \
-            --skip-existing \
-            --token "${CR_TOKEN}"
-
-      - name: Update Helm repo index on gh-pages
-        env:
-          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          cr index \
-            --owner "${GITHUB_REPOSITORY%/*}" \
-            --git-repo "${GITHUB_REPOSITORY#*/}" \
-            --charts-repo "https://${GITHUB_REPOSITORY%/*}.github.io/${GITHUB_REPOSITORY#*/}" \
-            --index-path .cr-index/index.yaml \
-            --pages-branch gh-pages \
-            --push \
-            --token "${CR_TOKEN}"
 
       # Keep artifacthub-repo.yml in sync on gh-pages (e.g. after the
       # repositoryID is filled in) in case the branch already existed.

@@ -39,14 +39,14 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
-          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
+          envsubst < charts/stigg-chart/values.yaml.tpl > charts/stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
           # Override extraEnv
-          sed -i "/^sidecar:/,/^persistentCache:/ s|extraEnv: {}|extraEnv: { LOG_LEVEL: debug }|" stigg-chart/values.yaml
-          sed -i "/^persistentCache:/,\$ s|extraEnv: {}|extraEnv: { CACHE_UPDATE_POLICY: UPSERT }|" stigg-chart/values.yaml
+          sed -i "/^sidecar:/,/^persistentCache:/ s|extraEnv: {}|extraEnv: { LOG_LEVEL: debug }|" charts/stigg-chart/values.yaml
+          sed -i "/^persistentCache:/,\$ s|extraEnv: {}|extraEnv: { CACHE_UPDATE_POLICY: UPSERT }|" charts/stigg-chart/values.yaml
 
       - name: Deploy with Helm
         run: |
@@ -59,7 +59,7 @@ jobs:
             --from-file=tls.key=redis-tls.key \
             --from-file=ca.crt=redis-ca.crt
 
-          cp -r stigg-chart example-app-chart/charts
+          cp -r charts/stigg-chart example-app-chart/charts
 
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
@@ -171,12 +171,12 @@ jobs:
           STIGG_SQS_QUEUE_URL: ${{ secrets.STIGG_QUEUE_URL }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
-          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
-          sed -i "s|^\\( *enabled: *\\).*|\\1true|" stigg-chart/values.yaml
-          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" stigg-chart/values.yaml
-          sed -i "s|^\\( *host: *\\).*|\\1redis|" stigg-chart/values.yaml
-          sed -i "s|^\\( *tls: *\\).*|\\1true|" stigg-chart/values.yaml
-          sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" stigg-chart/values.yaml
+          envsubst < charts/stigg-chart/values.yaml.tpl > charts/stigg-chart/values.yaml
+          sed -i "s|^\\( *enabled: *\\).*|\\1true|" charts/stigg-chart/values.yaml
+          sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" charts/stigg-chart/values.yaml
+          sed -i "s|^\\( *host: *\\).*|\\1redis|" charts/stigg-chart/values.yaml
+          sed -i "s|^\\( *tls: *\\).*|\\1true|" charts/stigg-chart/values.yaml
+          sed -i "s|^\\( *awsRegion: *\\).*|\\1us-east-2|" charts/stigg-chart/values.yaml
 
       - name: Deploy with Kubectl/Kustomize
         run: |
@@ -189,7 +189,7 @@ jobs:
             --from-file=tls.key=redis-tls.key \
             --from-file=ca.crt=redis-ca.crt
           
-          helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
+          helm template stigg ./charts/stigg-chart > kustomize/generated/stigg-manifests.yaml
           kubectl kustomize kustomize > kustomize/generated/app-manifests.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/generated/stigg-manifests.yaml
           kubectl apply -n ${NAMESPACE} -f kustomize/redis.yaml
@@ -277,7 +277,7 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
-          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
+          envsubst < charts/stigg-chart/values.yaml.tpl > charts/stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
@@ -293,7 +293,7 @@ jobs:
             --from-file=tls.key=redis-tls.key \
             --from-file=ca.crt=redis-ca.crt
           
-          cp -r stigg-chart example-app-chart/charts
+          cp -r charts/stigg-chart example-app-chart/charts
 
           helm install -n ${NAMESPACE} example-app ./example-app-chart \
             --set stiggchart.apiKeysSecretName=custom-stigg-api-keys
@@ -385,13 +385,13 @@ jobs:
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
         run: |
           envsubst < example-app-chart/values.yaml.tpl > example-app-chart/values.yaml
-          envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
+          envsubst < charts/stigg-chart/values.yaml.tpl > charts/stigg-chart/values.yaml
           sed -i "s|^\\( *enabled: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *environmentPrefix: *\\).*|\\1production|" example-app-chart/values.yaml
           sed -i "s|^\\( *host: *\\).*|\\1redis|" example-app-chart/values.yaml
           sed -i "s|^\\( *tls: *\\).*|\\1true|" example-app-chart/values.yaml
           sed -i "s|^\\( *standalone: *\\).*|\\1true|" example-app-chart/values.yaml
-          sed -i 's/1000m/500m/g' stigg-chart/values.yaml 
+          sed -i 's/1000m/500m/g' charts/stigg-chart/values.yaml 
 
       - name: Patch app code to reach sidecar service
         run: |
@@ -412,7 +412,7 @@ jobs:
             --from-file=tls.key=redis-tls.key \
             --from-file=ca.crt=redis-ca.crt
           
-          cp -r stigg-chart example-app-chart/charts
+          cp -r charts/stigg-chart example-app-chart/charts
           
           helm install -n ${NAMESPACE} example-app ./example-app-chart
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."

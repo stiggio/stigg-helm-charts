@@ -145,7 +145,7 @@ This section provides a step-by-step tutorial for deploying the example app with
 
 3. **Copy the stigg-chart to be a sub-chart of the example app:**
    ```sh
-   cp -r stigg-chart example-app-chart/charts
+   cp -r charts/stigg-chart example-app-chart/charts
    ```
 
 4. **Deploy the app and dependencies:**
@@ -268,15 +268,15 @@ To use the Helm chart in production:
 ## Using Kubectl
 
 If you do not want to use Helm directly, you can render the Kubernetes manifests using `helm template` and `kubectl kustomize` commands and apply them with `kubectl`.
-1. First, edit the values in `./stigg-chart/values.yaml` to match your setup (sidecar and persistentCache configuration). 
+1. First, edit the values in `./charts/stigg-chart/values.yaml` to match your setup (sidecar and persistentCache configuration). 
 2. Generate the Stigg components manifests:
     ```sh
     export STIGG_SERVER_API_KEY="<STIGG_SERVER_API_KEY>"
     export REDIS_PASSWORD="<REDIS_PASSWORD>"
     export STIGG_SQS_QUEUE_URL="<STIGG_SQS_QUEUE_URL>"
 
-    envsubst < stigg-chart/values.yaml.tpl > stigg-chart/values.yaml
-    helm template stigg ./stigg-chart > kustomize/generated/stigg-manifests.yaml
+    envsubst < charts/stigg-chart/values.yaml.tpl > charts/stigg-chart/values.yaml
+    helm template stigg ./charts/stigg-chart > kustomize/generated/stigg-manifests.yaml
     ```
     Manifests should include an api-keys secret. If persistent cache is enabled, a delpoyment resource will be added as well.
 3. Use the `kubectl` cli to add a stigg side-car to your app deployment and ensure your app has access to Stigg api-keys:
