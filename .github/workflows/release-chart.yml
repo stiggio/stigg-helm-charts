@@ -1,0 +1,67 @@
+name: Release stigg-chart
+
+# Packages the stigg-chart Helm chart, publishes it as a GitHub Release,
+# and updates the Helm repository index on the gh-pages branch using the
+# official helm/chart-releaser-action. Artifact Hub scrapes that gh-pages
+# Helm repo (see artifacthub-repo.yml) and surfaces each released version.
+
+on:
+  push:
+    branches: [master]
+    # Only release when the chart's version metadata changes.
+    paths:
+      - 'stigg-chart/Chart.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      # chart-releaser releases every chart found under charts_dir. Stage only
+      # stigg-chart into a clean directory so the example-app-chart demo is
+      # never published to Artifact Hub.
+      - name: Stage stigg-chart for release
+        run: |
+          rm -rf .charts-to-release
+          mkdir -p .charts-to-release
+          cp -r stigg-chart .charts-to-release/stigg-chart
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        with:
+          charts_dir: .charts-to-release
+          skip_existing: true
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # The action only writes packaged charts + index.yaml to gh-pages, so
+      # publish the Artifact Hub repo metadata alongside the index.
+      - name: Publish artifacthub-repo.yml to gh-pages
+        run: |
+          git fetch origin gh-pages
+          git worktree add .gh-pages-wt gh-pages
+          cp artifacthub-repo.yml .gh-pages-wt/artifacthub-repo.yml
+          cd .gh-pages-wt
+          git add artifacthub-repo.yml
+          if git diff --cached --quiet; then
+            echo "artifacthub-repo.yml already up to date"
+          else
+            git commit -m "chore: publish artifacthub-repo.yml"
+            git push origin gh-pages
+          fi
