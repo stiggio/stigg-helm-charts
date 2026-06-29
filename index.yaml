@@ -1,5 +1,16 @@
 apiVersion: v1
 entries:
+  stigg-chart:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-06-29T07:34:20.731759608Z"
+    description: A Helm chart for Stigg resources
+    digest: 52c1aacc8a713cd663f82e188cabb28c7a329a64e465c15690467601944a86cd
+    name: stigg-chart
+    type: application
+    urls:
+    - https://github.com/stiggio/stigg-helm-charts/releases/download/stigg-chart-1.0.0/stigg-chart-1.0.0.tgz
+    version: 1.0.0
   stiggchart:
   - apiVersion: v2
     appVersion: 0.1.0
@@ -11,4 +22,4 @@ entries:
     urls:
     - https://github.com/stiggio/stigg-helm-charts/releases/download/stiggchart-0.1.0/stiggchart-0.1.0.tgz
     version: 0.1.0
-generated: "2026-06-28T09:09:46.493670667Z"
+generated: "2026-06-29T07:34:20.731769596Z"
