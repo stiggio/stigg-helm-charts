@@ -1,5 +1,7 @@
 # stigg-helm-charts
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/stigg-helm-charts)](https://artifacthub.io/packages/search?repo=stigg-helm-charts)
+
 Kubernetes is a powerful open-source platform for automating deployment, scaling, and management of containerized applications. It provides a consistent way to run workloads across environments, whether on-premises or in the cloud. Interacting with Kubernetes is done using tools like kubectl (the command-line interface for managing clusters and resources) and Helm (a package manager that simplifies deploying and managing complex applications). This repository contains resources for deploying Stigg components, alongside a simple example app on Kubernetes, making it easier to get started and integrate Stigg in your deployments. Learn more on at [Helm documentation](https://helm.sh/docs/).
 
 ## Stigg components
