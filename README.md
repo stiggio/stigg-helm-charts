@@ -90,20 +90,40 @@ The setup will look like this:
 
 After deployment, you should see pods for your app, the sidecar, the persistent cache, and Redis running in your cluster. You can inspect these resources using `kubectl get pods` and `kubectl get services`.
 
+## Installing from the Helm repository
+
+The `stigg-chart` chart is published to a Helm repository hosted on GitHub Pages and indexed on [Artifact Hub](https://artifacthub.io). To install the Stigg components as a standalone chart:
+
+```sh
+helm repo add stigg https://stiggio.github.io/stigg-helm-charts
+helm repo update
+helm install my-stigg stigg/stigg-chart
+```
+
+Override configuration with `--set` or a values file, e.g.:
+
+```sh
+helm install my-stigg stigg/stigg-chart \
+  --set serverApiKey=<STIGG_SERVER_API_KEY> \
+  --set persistentCache.enabled=false
+```
+
+See [Production usage](#production-usage) for the full list of configuration values.
+
 ## Using Helm
 
 This section provides a step-by-step tutorial for deploying the example app with Stigg charts:
 
 1. **Update the example app values:**
-   Edit the `example-app-chart/values.yaml` file to set your sidecar and persistentCache configuration values required for your environment. The `stiggchart.persistentCache.awsRegion` and `stiggchart.persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS.
+   Edit the `example-app-chart/values.yaml` file to set your sidecar and persistentCache configuration values required for your environment. The `stigg-chart.persistentCache.awsRegion` and `stigg-chart.persistentCache.queueUrl` fields are used to configure the persistent cache to retrieve updates via AWS SQS.
 
-   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `stiggchart.persistentCache.redis.host` to point to your external Redis instance.
+   By default, the example app will deploy a Redis instance in your cluster for use by the persistent cache. If you already have a Redis deployment or want to use an external Redis service, you can disable the built-in Redis by removing the redis template file `example-app-chart/templates/redis.yaml` and then set `stigg-chart.persistentCache.redis.host` to point to your external Redis instance.
 
-   By default, a stigg sidecar container will be provisioned alonside the example app. If you want to run it as a standalone service you can set the value in the example app `stiggchart.sidecar.standalone` to `true`.
+   By default, a stigg sidecar container will be provisioned alonside the example app. If you want to run it as a standalone service you can set the value in the example app `stigg-chart.sidecar.standalone` to `true`.
 
-   > **⚠️ Important:** When using persistent cache (`stiggchart.persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
+   > **⚠️ Important:** When using persistent cache (`stigg-chart.persistentCache.enabled: true`), Redis must be configured with TLS and authentication. This is enforced by the Helm chart validations.
 
-   If you do not want to use persistent cache, you can disable it by setting `stiggchart.persistentCache.enabled: false` in the values file.
+   If you do not want to use persistent cache, you can disable it by setting `stigg-chart.persistentCache.enabled: false` in the values file.
 
    First, we'll create a namespace to provision resources:
    ```sh
@@ -127,7 +147,7 @@ This section provides a step-by-step tutorial for deploying the example app with
    
    Then update `example-app-chart/values.yaml` to configure Redis TLS and authentication:
    ```yaml
-   stiggchart:
+   stigg-chart:
      persistentCache: 
       enabled: true                 # Enable persistent cache
      redis:
@@ -249,7 +269,7 @@ To use the Helm chart in production:
 - **Override environment variables on the sidecar and persistent cache containers**:
   - Both components read their configuration from environment variables. Pass extras via `sidecar.extraEnv` and `persistentCache.extraEnv` as plain `name: value` maps; they're injected verbatim onto the container.
     ```yaml
-    stiggchart:
+    stigg-chart:
       sidecar:
         extraEnv:
           LOG_LEVEL: debug
