@@ -2,7 +2,7 @@
 # You can provide your own values when installing the chart.
 # You can override these values in your own Helm chart's values.yaml file. For example:
 #
-# stiggchart:
+# stigg-chart:
 #   serverApiKey: "your-server-api-key"
 
 ## @param serverApiKey Stigg server API key to store in a new created secret

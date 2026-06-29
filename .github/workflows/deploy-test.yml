@@ -296,7 +296,7 @@ jobs:
           cp -r charts/stigg-chart example-app-chart/charts
 
           helm install -n ${NAMESPACE} example-app ./example-app-chart \
-            --set stiggchart.apiKeysSecretName=custom-stigg-api-keys
+            --set stigg-chart.apiKeysSecretName=custom-stigg-api-keys
           echo "Waiting for pods to be ready in namespace ${NAMESPACE}..."
           kubectl wait --for=condition=Ready pod --all -n ${NAMESPACE} --timeout=180s
           kubectl get pods -n ${NAMESPACE}

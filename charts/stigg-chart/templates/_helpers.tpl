@@ -3,7 +3,7 @@
 {{- /* */ -}}
 
 {{- define "stigg.redisEnv" }}
-{{- $vals := .Values.stiggchart | default .Values }}
+{{- $vals := (index .Values "stigg-chart") | default .Values }}
 - name: REDIS_ENVIRONMENT_PREFIX
   valueFrom:
     configMapKeyRef:
@@ -65,7 +65,7 @@
 {{- /* A utility to bind api keys to env variables from a secret */ -}}
 {{- define "stigg.apikeys" }}
 {{- /* Fetch the right context to evaluate the values */ -}}
-{{- $vals := .Values.stiggchart | default .Values }}
+{{- $vals := (index .Values "stigg-chart") | default .Values }}
 {{- if $vals.apiKeysSecretName }}
 # using existing secret
 - name: SERVER_API_KEY
@@ -85,7 +85,7 @@
 
 {{- /* A utility to add a stigg sidecar to a given deployment/pod */ -}}
 {{- define "stigg.sidecar" }}
-{{- $vals := .Values.stiggchart | default .Values }}
+{{- $vals := (index .Values "stigg-chart") | default .Values }}
 - name: stigg-sidecar
   image: public.ecr.aws/stigg/sidecar:{{ $vals.sidecar.imageTag }}
   env:

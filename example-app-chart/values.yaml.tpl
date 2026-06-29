@@ -1,4 +1,4 @@
-stiggchart:
+stigg-chart:
   serverApiKey: "${STIGG_SERVER_API_KEY}"
   sidecar:
     imageTag: "latest"
