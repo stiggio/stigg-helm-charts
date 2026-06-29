@@ -4,11 +4,9 @@
 # of the gh-pages branch, alongside index.yaml. The release workflow
 # (.github/workflows/release-chart.yml) copies it there automatically.
 #
-# Get the repositoryID from Artifact Hub:
-#   Control Panel -> Repositories -> stigg-helm-charts -> info menu -> "Get repository ID"
-# Replace the placeholder below; until then ownership verification is skipped
-# (harmless — the repo still works, it just won't show the verified badge).
-repositoryID: REPLACE_WITH_ARTIFACT_HUB_REPOSITORY_ID
+# repositoryID is the Artifact Hub Repository ID, used to verify ownership.
+# Get it from: Control Panel -> Repositories -> stigg-helm-charts -> "Get repository ID".
+repositoryID: 64156839-38e2-4271-94ef-d6b401b9014b
 
 # Optional: lets these users claim/transfer ownership via the Artifact Hub CLI.
 # Emails must match verified Artifact Hub accounts.
