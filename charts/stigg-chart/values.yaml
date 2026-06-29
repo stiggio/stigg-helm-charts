@@ -1,0 +1,80 @@
+## Default values for stigg-chart.
+## Override these when installing the chart, e.g.:
+##   helm install my-stigg stigg/stigg-chart --set serverApiKey=<key>
+
+## @section Common parameters
+
+## @param serverApiKey Stigg server API key, stored in a newly created secret
+serverApiKey: ""
+## @param apiKeysSecretName Use an existing secret with key "stigg_server_api_key". Overrides serverApiKey.
+apiKeysSecretName: ""
+## @param extraDeploy Array of extra objects to deploy with the release
+extraDeploy: []
+
+## @section sidecar parameters
+sidecar:
+  ## @param imageTag Docker image tag for the Stigg Sidecar
+  imageTag: "latest"
+
+  ## @param standalone Run a standalone deployment of the sidecar service
+  standalone: false
+
+  ## @param extraEnv Extra environment variables passed verbatim to the sidecar container
+  extraEnv: {}
+
+  ## @param deploymentResources Resource requests and limits for standalone service deployment
+  deploymentResources:
+    cpu:
+      request: "1000m"
+      limit: "1500m"
+    memory:
+      request: "512Mi"
+      limit: "640Mi"
+  ## @param deploymentHPA Horizontal Pod Autoscaler configuration for standalone service deployment
+  deploymentHPA:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+## @section persistentCache parameters
+persistentCache:
+  ## @param enabled Enable persistent cache (true/false)
+  enabled: false
+  ## @param deploymentResources Resource requests and limits for persistent cache service
+  deploymentResources:
+    cpu:
+      request: "1000m"
+      limit: "1500m"
+    memory:
+      request: "512Mi"
+      limit: "640Mi"
+  ## @param deploymentHPA Horizontal Pod Autoscaler configuration for persistent cache service
+  deploymentHPA:
+    minReplicas: 1
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  ## @param imageTag Docker image tag for the Stigg Persistent Cache
+  imageTag: "2.39.0"
+  ## @param extraEnv Extra environment variables passed verbatim to the persistent-cache container
+  extraEnv: {}
+  redis:
+    ## @param environmentPrefix Prefix for Redis environment keys
+    environmentPrefix: ""
+    ## @param host Hostname for Redis instance
+    host: ""
+    ## @param port Redis port (default: 6379)
+    port: "6379"
+    ## @param db Redis DB identifier (default: 0)
+    db: "0"
+    ## @param username Redis username (optional)
+    username: ""
+    ## @param password Redis password (REQUIRED when persistentCache is enabled)
+    password: ""
+    ## @param tls Enable TLS for Redis connection (REQUIRED when persistentCache is enabled)
+    tls: true
+  ## @param awsRegion AWS region for SQS queue, provisioned by Stigg
+  awsRegion: ""
+  ## @param queueUrl URL of AWS SQS queue, provisioned by Stigg
+  queueUrl: ""
